@@ -1,0 +1,26 @@
+[
+  {
+    "id": 1,
+    "image": "/assets/img/banner/vision.jpg",
+    "title": "Furniture",
+    "subtitle": "",
+    "price": "",
+    "link": "/shop"
+  },
+  {
+    "id": 2,
+    "image": "/assets/img/banner/mission.jpg",
+    "title": "Fruits",
+    "subtitle": "",
+    "price": "",
+    "link": "/shop"
+  },
+  {
+    "id": 3,
+    "image": "/assets/img/banner/goal.jpg",
+    "title": "Groceries",
+    "subtitle": "",
+    "price": "",
+    "link": "/shop"
+  }
+]
