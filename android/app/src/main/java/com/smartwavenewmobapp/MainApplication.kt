@@ -1,4 +1,4 @@
-package com.smartwavenewmobapp
+package com.AmproApp
 
 import android.app.Application
 import com.facebook.react.PackageList
