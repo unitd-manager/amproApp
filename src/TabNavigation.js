@@ -42,7 +42,7 @@ const HomeStack = () => (
     <Stack.Screen
       name="HomeMain"
       component={Home}
-      options={{ title: "Smart Wave" }}
+      options={{ title: "Ampro" }}
     />
     <Stack.Screen
       name="ProductList"
