@@ -9,7 +9,7 @@ const Categories = ({navigation}) => {
 	const[subCategories,setSubCategories]=useState([]);
 	const[subCategoryTypes,setSubCategoryTypes]=useState([]);
 
-  //const imagebaseurl='https://smartwaveadmin.unitdtechnologies.com/storage/uploads/';
+  //const imagebaseurl='https://amproadmin.unitdtechnologies.com/storage/uploads/';
 
 	const formatCategoryData = (categories, subcategories) => {
     return categories.map(category => ({
@@ -58,7 +58,7 @@ const Categories = ({navigation}) => {
 
   return (
     <ScrollView style={styles.container}>
-      <Text style={styles.header}>Categories</Text>
+      <Text style={styles.header}>Categoes</Text>
 
       {categoryData?.map((category, index) => (
         <View key={index}>
@@ -88,7 +88,7 @@ const Categories = ({navigation}) => {
   style={styles.image}
   onError={() => {
     // Fallback to another base URL if first fails
-    item.images[0] = 'http://smartwaveadmin.unitdtechnologies.com/storage/uploads/' + item.images[0];
+    item.images[0] = 'http://amproadmin.unitdtechnologies.com/storage/uploads/' + item.images[0];
   }}
 />
 
