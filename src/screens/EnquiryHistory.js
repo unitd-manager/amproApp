@@ -1,79 +1,79 @@
-import React,{useState,useEffect, useContext} from 'react';
-import { View, Text, FlatList, StyleSheet,TouchableOpacity } from 'react-native';
-//import AsyncStorage from '@react-native-async-storage/async-storage';
+import React, { useState, useEffect, useContext } from 'react';
+import { View, Text, FlatList, StyleSheet, TouchableOpacity } from 'react-native';
 import { AuthContext } from '../context/AuthContext';
 import api from '../constants/api';
 
+export default function EnquiryHistory({ navigation }) {
+  const [enquiries, setEnquiries] = useState([]);
+  const { user } = useContext(AuthContext);
 
-export default function EnquiryHistory({navigation}) {
-	const [enquiries, setEnquiries] = useState([]);
-	const [searchQuery, setSearchQuery] = useState(""); // Search state
-   const [userData, setUser] = useState();
+  useEffect(() => {
+    const initialize = async () => {
+      try {
+        if (user) {
+          api
+            .post(`/enquiry/getEnquiryByContactId`, {
+              contact_id: user?.contact_id,
+            })
+            .then((res) => {
+              const sorted = res.data.data?.sort(
+                (a, b) => b.enquiry_id - a.enquiry_id
+              );
+              setEnquiries(sorted);
+            })
+            .catch((err) => {
+              console.log('API Error:', err);
+            });
+        }
+      } catch (e) {
+        console.error('Error:', e);
+      }
+    };
 
-
-   
-     const { user, logout } = useContext(AuthContext);
-		useEffect(() => {
-			const initialize = async () => {
-			  try {
-				// const jsonValue = await AsyncStorage.getItem('user');
-				// console.log('Retrieved from AsyncStorage:', jsonValue);
-				
-				// const user = jsonValue != null ? JSON.parse(jsonValue) : null;
-				// setUser(user);
-		  console.log('user enq',user);
-				if (user) {
-				  console.log('Contact ID:', user.contact_id);
-		  
-				  api.post(`/enquiry/getEnquiryByContactId`, {
-					contact_id: user?.contact_id,
-				  })
-				  .then((res) => {
-					const sortedEnquiries = res.data.data?.sort((a, b) => b.enquiry_id - a.enquiry_id);
-					setEnquiries(sortedEnquiries);
-				  })
-				  .catch((err) => {
-					console.log('API Error:', err);
-				  });
-				} else {
-				  console.warn('User not found in AsyncStorage.');
-				}
-		  
-			  } catch (e) {
-				console.error('Error reading user from AsyncStorage:', e);
-			  }
-			};
-		  
-			initialize();
-		  }, []);
-		  
-	 
-
-	  const total = enquiries.length;
-	  const pending = enquiries.filter(e => e.status === 'Pending').length;
-
+    initialize();
+  }, []);
 
   const renderItem = ({ item }) => (
     <View style={styles.card}>
-       <TouchableOpacity
-              onPress={() => navigation.navigate("EnquiryDetails", { enquiry: item })}
-            >
-      <Text style={styles.orderId}>{item.type} #{item.enquiry_id}</Text>
-      <Text style={styles.orderId}>{item.type} {item.enquiry_code}</Text>
-      <Text style={styles.date}>{item.enquiry_date}</Text>
-      <Text style={styles.label}>{item.order_code }</Text>
-      <View
-        style={[
-          styles.statusBadge,
-          item.status === 'Approved'
-            ? styles.approved
-            : item.status === 'Rejected'
-            ? styles.rejected
-            : styles.pending,
-        ]}
+      <TouchableOpacity
+        onPress={() => navigation.navigate('EnquiryDetails', { enquiry: item })}
       >
-        <Text style={styles.statusText}>{item.status}</Text>
-      </View>
+        <Text style={styles.orderId}>{item.type} #{item.enquiry_id}</Text>
+        <Text style={styles.orderId}>{item.type} {item.enquiry_code}</Text>
+        <Text style={styles.date}>{item.enquiry_date}</Text>
+        <Text style={styles.label}>{item.order_code}</Text>
+
+        <View
+          style={[
+            styles.statusBadge,
+            item.status === 'Completed'
+              ? styles.approved
+              : item.status === 'Cancelled'
+              ? styles.rejected
+              : item.status === 'Pending'
+              ? styles.pending
+              : item.status === 'In Progress'
+              ? styles.inProgress
+              : styles.new,
+          ]}
+        >
+          <Text
+            style={[
+              styles.statusText,
+              item.status === 'Completed'
+                ? styles.approvedText
+                : item.status === 'Cancelled'
+                ? styles.rejectedText
+                : item.status === 'Pending'
+                ? styles.pendingText
+                : item.status === 'In Progress'
+                ? styles.inProgressText
+                : styles.newText,
+            ]}
+          >
+            {item.status}
+          </Text>
+        </View>
       </TouchableOpacity>
     </View>
   );
@@ -87,11 +87,12 @@ export default function EnquiryHistory({navigation}) {
           <Text style={styles.summaryTitle}>Total Enquiries</Text>
           <Text style={styles.summaryCount}>{enquiries.length}</Text>
         </View>
+
         <View style={styles.summaryCard}>
           <Text style={styles.summaryTitle}>Pending</Text>
-          <Text style={styles.summaryCount}>{
-                parseFloat(enquiries.filter((e) => e.order_code && e.order_code !== "").length
-              )}</Text>
+          <Text style={styles.summaryCount}>
+            {enquiries.filter((e) => e.order_code && e.order_code !== '').length}
+          </Text>
         </View>
       </View>
 
@@ -105,68 +106,83 @@ export default function EnquiryHistory({navigation}) {
   );
 }
 
+const font = 'Outfit-Regular';
+
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#f8f9fb', padding: 16,fontFamily: 'Outfit-Regular', },
+  container: { 
+    flex: 1, 
+    backgroundColor: '#FFFFFF', 
+    padding: 16,
+  },
   header: {
+    fontFamily: font,
     fontSize: 20,
     fontWeight: '600',
     marginBottom: 16,
     textAlign: 'center',
-    fontFamily: 'Outfit-Regular',
+    color: '#000000',
   },
+
   summaryContainer: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     marginBottom: 16,
-    fontFamily: 'Outfit-Regular',
   },
+
   summaryCard: {
-    backgroundColor: '#fff',
+    backgroundColor: '#FFFFFF',
     padding: 16,
     borderRadius: 12,
     width: '48%',
-    shadowColor: '#ccc',
+    shadowColor: '#00000020',
     shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.1,
+    shadowOpacity: 0.15,
     shadowRadius: 3,
     elevation: 3,
-    fontFamily: 'Outfit-Regular',
   },
   summaryTitle: {
-    color: '#7b7b8b',
+    fontFamily: font,
+    color: '#444444',
     fontSize: 14,
-    fontFamily: 'Outfit-Regular',
   },
   summaryCount: {
+    fontFamily: font,
     fontSize: 24,
     fontWeight: 'bold',
     marginTop: 4,
-    fontFamily: 'Outfit-Regular',
+    color: '#000000',
   },
+
   card: {
-    backgroundColor: '#fff',
+    backgroundColor: '#FFFFFF',
     padding: 16,
     borderRadius: 12,
     marginBottom: 12,
-    position: 'relative',
-    fontFamily: 'Outfit-Regular',
+    shadowColor: '#00000020',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.15,
+    shadowRadius: 3,
+    elevation: 3,
   },
+
   orderId: {
+    fontFamily: font,
     fontSize: 16,
     fontWeight: '500',
-    fontFamily: 'Outfit-Regular',
+    color: '#000000',
   },
   date: {
-    color: '#9a9a9a',
+    fontFamily: font,
+    color: '#666666',
     fontSize: 13,
     marginVertical: 4,
-    fontFamily: 'Outfit-Regular',
   },
   label: {
-    color: '#3a3a3a',
+    fontFamily: font,
+    color: '#000000',
     fontSize: 14,
-    fontFamily: 'Outfit-Regular',
   },
+
   statusBadge: {
     position: 'absolute',
     right: 16,
@@ -174,24 +190,23 @@ const styles = StyleSheet.create({
     paddingVertical: 4,
     paddingHorizontal: 10,
     borderRadius: 20,
-    fontFamily: 'Outfit-Regular',
   },
-  approved: {
-    backgroundColor: '#d7f5dd',
-    fontFamily: 'Outfit-Regular',
-  },
-  rejected: {
-    backgroundColor: '#ffdede',
-    fontFamily: 'Outfit-Regular',
-  },
-  pending: {
-    backgroundColor: '#fef2c0',
-    fontFamily: 'Outfit-Regular',
-  },
+
   statusText: {
+    fontFamily: font,
     fontSize: 12,
     fontWeight: '500',
-    color: '#333',
-    fontFamily: 'Outfit-Regular',
   },
+
+  approved: { backgroundColor: '#d7f5dd' },
+  rejected: { backgroundColor: '#ffdede' },
+  pending: { backgroundColor: '#fef2c0' },
+  inProgress: { backgroundColor: '#e0f7fa' },
+  new: { backgroundColor: '#f0f0f0' },
+
+  approvedText: { color: '#008000' },
+  rejectedText: { color: '#FF0000' },
+  pendingText: { color: '#FFA500' },
+  inProgressText: { color: '#0000FF' },
+  newText: { color: '#808080' },
 });

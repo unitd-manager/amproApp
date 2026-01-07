@@ -45,7 +45,7 @@ export default (props) => {
 							style={styles.image4}
 						/>
 						<Text style={styles.text5}>
-							{"smartwave@gmail.com"}
+							{"Ampro@gmail.com"}
 						</Text>
 						<Image
 							source = {{uri: "https://storage.googleapis.com/tagjs-prod.appspot.com/pNd58t8xI9/66n4tj2x.png"}} 

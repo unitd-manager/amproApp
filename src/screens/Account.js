@@ -1,23 +1,21 @@
 import React, { useContext, useEffect, useState } from 'react';
 import { View, Text, Image, TouchableOpacity, StyleSheet, ScrollView, Alert } from 'react-native';
 import Icon from 'react-native-vector-icons/Feather';
-import AsyncStorage from '@react-native-async-storage/async-storage';
-import api from '../constants/api'; // your API setup
+import api from '../constants/api';
 import { AuthContext } from '../context/AuthContext';
 import { useDispatch } from 'react-redux';
 import { emptyCart } from '../redux/slices/cartSlice';
 
 const AccountScreen = ({ navigation }) => {
+  const styles = getStyles(); // ❗ DARK MODE REMOVED
   const [userData, setUserData] = useState(null);
-  const [isLoggedIn, setIsLoggedIn] = useState(false);
-const dispatch=useDispatch();
-
-const { user, logout } = useContext(AuthContext);
+  const dispatch = useDispatch();
+  const { user, logout } = useContext(AuthContext);
 
   const handleLogout = async () => {
     try {
       logout();
-    dispatch(emptyCart());
+      dispatch(emptyCart());
     } catch (error) {
       console.log('Error during logout:', error);
     }
@@ -25,23 +23,15 @@ const { user, logout } = useContext(AuthContext);
 
   const getUserData = async () => {
     try {
-      // const jsonValue = await AsyncStorage.getItem('user');
-      // const user = jsonValue != null ? JSON.parse(jsonValue) : null;
-
       if (user?.contact_id) {
-        setIsLoggedIn(true);
-        // Get full user data from API
         const res = await api.post("/contact/getContactsById", {
           contact_id: user.contact_id,
         });
-        console.log('user',user);
+
         setUserData(res.data.data[0]);
-      } else {
-        setIsLoggedIn(false);
       }
     } catch (e) {
       console.error('Error fetching user:', e);
-      setIsLoggedIn(false);
     }
   };
 
@@ -53,60 +43,51 @@ const { user, logout } = useContext(AuthContext);
     { icon: 'user', label: 'Your Profile', screen: 'Profile' },
     { icon: 'info', label: 'About Us', screen: 'AboutUs' },
     { icon: 'phone', label: 'Contact Us', screen: 'ContactUs' },
-   { icon: 'file-text', label: 'Enquiry History', screen: 'EnquiryHistory' },
+    { icon: 'file-text', label: 'Orders', screen: 'Orders' },
     { icon: 'heart', label: 'Wishlist', screen: 'WishlistScreen' },
-    // { icon: 'lock', label: 'Change password', screen: 'ChangePassword' },
-     { icon: 'truck', label: 'Shipping Address', screen: 'ShippingAddress' },
+    { icon: 'truck', label: 'Shipping Address', screen: 'ShippingAddress' },
     { icon: 'log-out', label: 'Logout', screen: 'Logout' },
   ];
+
   const userlessmenuItems = [
     { icon: 'info', label: 'About Us', screen: 'AboutUs' },
     { icon: 'phone-call', label: 'Contact Us', screen: 'ContactUs' },
     { icon: 'log-in', label: 'Sign In', screen: 'LoginPage' },
     { icon: 'user-plus', label: 'Register', screen: 'Signup' },
-   
-    
   ];
-  
+
   if (!user) {
     return (
       <ScrollView style={styles.container}>
-      {/* <TouchableOpacity style={styles.backBtn} onPress={() => navigation.goBack()}>
-        <Icon name="arrow-left" size={24} />
-      </TouchableOpacity> */}
+        <View style={styles.profileSection}>
+          <Image
+            source={{ uri: userData?.image || 'https://via.placeholder.com/100' }}
+            style={styles.avatar}
+          />
+          <Text style={styles.name}>Guest</Text>
+        </View>
 
-      <View style={styles.profileSection}>
-        <Image
-          source={{ uri: userData?.image || 'https://via.placeholder.com/100' }}
-          style={styles.avatar}
-        />
-        <Text style={styles.name}>{userData?.name || 'No User'}</Text>
-      </View>
-      <View style={styles.menu}>
-      {userlessmenuItems.map((item, index) => (
-    <TouchableOpacity
-      key={index}
-      style={styles.menuItem}
-      onPress={() => navigation.navigate(item.screen)}
-    >
-      <View style={styles.menuIconText}>
-        <Icon name={item.icon} size={20} color="#00BCD4" />
-        <Text style={styles.menuText}>{item.label}</Text>
-      </View>
-      <Icon name="chevron-right" size={20} color="#888" />
-    </TouchableOpacity>
-  ))}
-</View>
-    </ScrollView>
+        <View style={styles.menu}>
+          {userlessmenuItems.map((item, index) => (
+            <TouchableOpacity
+              key={index}
+              style={styles.menuItem}
+              onPress={() => navigation.navigate(item.screen)}
+            >
+              <View style={styles.menuIconText}>
+                <Icon name={item.icon} size={20} color="#00BCD4" />
+                <Text style={styles.menuText}>{item.label}</Text>
+              </View>
+              <Icon name="chevron-right" size={20} color="#555" />
+            </TouchableOpacity>
+          ))}
+        </View>
+      </ScrollView>
     );
   }
 
   return (
     <ScrollView style={styles.container}>
-      {/* <TouchableOpacity style={styles.backBtn} onPress={() => navigation.goBack()}>
-        <Icon name="arrow-left" size={24} />
-      </TouchableOpacity> */}
-
       <View style={styles.profileSection}>
         <Image
           source={{ uri: userData?.image || 'https://via.placeholder.com/100' }}
@@ -116,110 +97,95 @@ const { user, logout } = useContext(AuthContext);
       </View>
 
       <View style={styles.menu}>
-      {menuItems.map((item, idx) => (
-  <TouchableOpacity
-    key={idx}
-    style={styles.menuItem}
-    onPress={() => {
-      if (item.label === 'Logout') {
-        Alert.alert(
-          'Confirm Logout',
-          'Are you sure you want to logout?',
-          [
-            { text: 'Cancel', style: 'cancel' },
-            { text: 'Logout', onPress: handleLogout, style: 'destructive' },
-          ],
-          { cancelable: true }
-        );
-      } else {
-         navigation.navigate(item.screen);
-      }
-    }}
-  >
-    <View style={styles.menuIconText}>
-      <Icon name={item.icon} size={20} color="#00BCD4" />
-      <Text style={styles.menuText}>{item.label}</Text>
-    </View>
-    <Icon name="chevron-right" size={20} color="#888" />
-  </TouchableOpacity>
-))}
-
+        {menuItems.map((item, idx) => (
+          <TouchableOpacity
+            key={idx}
+            style={styles.menuItem}
+            onPress={() => {
+              if (item.label === 'Logout') {
+                Alert.alert(
+                  'Confirm Logout',
+                  'Are you sure you want to logout?',
+                  [
+                    { text: 'Cancel', style: 'cancel' },
+                    { text: 'Logout', onPress: handleLogout, style: 'destructive' },
+                  ]
+                );
+              } else {
+                navigation.navigate(item.screen);
+              }
+            }}
+          >
+            <View style={styles.menuIconText}>
+              <Icon name={item.icon} size={20} color="#00BCD4" />
+              <Text style={styles.menuText}>{item.label}</Text>
+            </View>
+            <Icon name="chevron-right" size={20} color="#555" />
+          </TouchableOpacity>
+        ))}
       </View>
     </ScrollView>
   );
 };
 
-const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#fff' },
-  backBtn: { margin: 20 },
-  profileSection: {
-    alignItems: 'center',
-    marginVertical: 20,
-  },
-  avatar: {
-    width: 90,
-    height: 90,
-    borderRadius: 45,
-    backgroundColor: '#eee',
-  },
-  name: {
-    fontSize: 18,
-    fontWeight: '600',
-    marginTop: 10,
-    fontFamily: 'Outfit-Regular',
-  },
-  menu: {
-    paddingHorizontal: 20,
-  },
-  menuItem: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    paddingVertical: 16,
-    borderBottomColor: '#eee',
-    borderBottomWidth: 1,
-  },
-  menuIconText: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 15,
-    fontFamily: 'Outfit-Regular',
-  },
-  menuText: {
-    fontSize: 16,
-    fontFamily: 'Outfit-Regular',
-  },
-  centered: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  loginPrompt: {
-    fontSize: 18,
-    marginBottom: 20,
-  },
-  loginButton: {
-    backgroundColor: '#00BCD4',
-    padding: 12,
-    borderRadius: 8,
-    marginBottom: 10,
-  },
-  signupButton: {
-    borderColor: '#00BCD4',
-    borderWidth: 1,
-    padding: 12,
-    borderRadius: 8,
-  },
-  loginText: {
-    color: '#fff',
-    fontWeight: 'bold',
-    fontFamily: 'Outfit-Regular',
-  },
-  signupText: {
-    color: '#00BCD4',
-    fontWeight: 'bold',
-    fontFamily: 'Outfit-Regular',
-  },
-});
+
+
+// ✅ ALWAYS LIGHT MODE STYLES (WHITE BACKGROUND + BLACK TEXT)
+const getStyles = () =>
+  StyleSheet.create({
+    container: { 
+      flex: 1, 
+      backgroundColor: '#FFFFFF',   // ALWAYS WHITE
+    },
+    backBtn: { margin: 20 },
+    profileSection: {
+      alignItems: 'center',
+      marginVertical: 20,
+    },
+    avatar: {
+      width: 90,
+      height: 90,
+      borderRadius: 45,
+      backgroundColor: '#eee',
+    },
+    name: {
+      fontSize: 18,
+      fontWeight: '600',
+      marginTop: 10,
+      color: '#000000',            // ALWAYS BLACK TEXT
+      fontFamily: 'Outfit-Regular',
+    },
+    menu: {
+      paddingHorizontal: 20,
+    },
+    menuItem: {
+      flexDirection: 'row',
+      justifyContent: 'space-between',
+      alignItems: 'center',
+      paddingVertical: 16,
+      borderBottomColor: '#ddd',
+      borderBottomWidth: 1,
+    },
+    menuIconText: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: 15,
+    },
+    menuText: {
+      fontSize: 16,
+      color: '#000000',            // ALWAYS BLACK
+      fontFamily: 'Outfit-Regular',
+    },
+    loginText: {
+      color: '#fff',
+      fontWeight: 'bold',
+      fontFamily: 'Outfit-Regular',
+    },
+    signupText: {
+      color: '#00BCD4',
+      fontWeight: 'bold',
+      fontFamily: 'Outfit-Regular',
+    },
+  });
 
 export default AccountScreen;

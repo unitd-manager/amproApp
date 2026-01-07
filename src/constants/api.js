@@ -1,8 +1,16 @@
 import axios from 'axios'
 
 const api = axios.create({
-//baseURL: 'https://amproadmin.zaitunsoftsolutions.com:2002',
-baseURL: 'http://66.29.149.122:2001',
+//baseURL: 'https://Ampro.unitdtechnologies.com:2014',
+baseURL:'http://66.29.149.122:2003',
+
+//baseURL: 'http://localhost:3001',
 });
 
-export default api
+    
+// const loginApi = axios.create({
+//   baseURL: 'https://art-cause.com:3003'
+// });
+
+
+export default api 

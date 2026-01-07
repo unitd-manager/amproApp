@@ -49,10 +49,10 @@ const isInWishlist = () => {
   const addCart = (data) => {
  
     if(user){
-      if(selectedProductGrade){
+      // if(selectedProductGrade){
      
     data.contact_id=user.contact_id
-  data.grade=selectedProductGrade;
+  //data.grade=selectedProductGrade;
      dispatch(addToCart(data)) 
              .then(() => { Alert.alert("Item added to cart")
                dispatch(fetchCartItems(user));
@@ -61,13 +61,10 @@ const isInWishlist = () => {
                console.error('Failed to add to cart:', error);
              });
             } else{
-              Alert.alert("Please Select Grade")
+              Alert.alert("Please Login")
             }
-    }
-    else{
-      Alert.alert("Please Login")
-     
-    }
+    
+   
    
   };
   const deleteWishlist = (data) => {
@@ -209,7 +206,7 @@ const isInWishlist = () => {
 </View>
       <Divider />
 <View style={styles.gradeview}>
-<GradeSelector product={product} selectedProductGrade={selectedProductGrade} setSelectedProductGrade={setSelectedProductGrade} setProductStock={setProductStock} setQuantityCount={setQuantityCount} />  
+{/* <GradeSelector product={product} selectedProductGrade={selectedProductGrade} setSelectedProductGrade={setSelectedProductGrade} setProductStock={setProductStock} setQuantityCount={setQuantityCount} />   */}
     </View>
         <Image
           source={{

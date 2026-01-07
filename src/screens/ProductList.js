@@ -14,15 +14,16 @@ import Ionicons from 'react-native-vector-icons/Ionicons';
 import api from '../constants/api';
 import imageBase from '../constants/imageBase';
 import { useSelector, useDispatch } from 'react-redux';
-import { addToCart, fetchCartItems } from '../redux/slices/cartSlice';
+import { addToCart, fetchCartItems,updateCart } from '../redux/slices/cartSlice';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useFocusEffect } from '@react-navigation/native';
 import { AuthContext } from '../context/AuthContext';
 import { addToWishlist, deleteWishlistItem, fetchWishlistItems } from '../redux/slices/wishlistSlice';
 //import BackButton from '../components/BackButton';
+import Toast from 'react-native-toast-message';
 
 const ProductListScreen = ({ route, navigation }) => {
-  const { categoryId,categoryName } = route.params || {};
+  const { categoryId, categoryName, initialSubcategoryId, subcategoryName } = route.params || {};
   const [searchQuery, setSearchQuery] = useState('');
   const [products, setProducts] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -38,11 +39,18 @@ const { user, logout } = useContext(AuthContext);
 
 const { wishitems, status } = useSelector((state) => state.wishlist);
 
+const { items: cartItems } = useSelector((state) => state.cart);
+
   const filteredProducts = products.filter((item) =>
     item.title?.toLowerCase().includes(searchQuery?.toLowerCase())
   );
    const [userData, setUser] = useState({});
-  
+//   const [toastVisible, setToastVisible] = useState(false);
+//   const [toastMessage, setToastMessage] = useState('');
+// const showToast = (message) => {
+//   setToastMessage(message);
+//   setToastVisible(true);
+// };
     const dispatch = useDispatch();
   // const addToCart = (id) => {
   //   // Implement cart logic
@@ -75,31 +83,62 @@ const { wishitems, status } = useSelector((state) => state.wishlist);
   
   
   const addCart = (data) => {
- console.log('data',data);
-    if(user){
-      
-    data.contact_id=user.contact_id
-  
-     dispatch(addToCart(data)) 
-             .then(() => { Alert.alert("Item added to cart")
-               dispatch(fetchCartItems(user));
-             })
-             .catch((error) => {
-               console.error('Failed to add to cart:', error);
-             });
-  
+    console.log('data', data);
+    if (user) {
+      const updatedItem = { ...data, contact_id: user.contact_id };
+
+      // Check if the product with the same product_id and selected grade already exists in the cart
+      const existingCartItem = cartItems.find(
+        (item) =>
+          item.product_id === updatedItem.product_id &&
+          item.selectedGrade === updatedItem.selectedGrade
+      );
+
+      if (existingCartItem) {
+        // If it exists, update the quantity
+        const newQuantity = existingCartItem.qty + 1;
+        dispatch(
+          updateCart({
+            basket_id: existingCartItem.basket_id,
+            qty: newQuantity,
+            contact_id: user.contact_id,
+          })
+        )
+          .then(() => {
+            Toast.show({
+              type: 'success',
+              text1: `${date?.title} quantity updated in cart`,
+              position: 'bottom'
+            });
+            dispatch(fetchCartItems(user));
+          })
+          .catch((error) => {
+            console.error('Failed to update cart item quantity:', error);
+          });
+      } else {
+        // If it doesn't exist, add it as a new item
+        dispatch(addToCart(updatedItem))
+          .then(() => {
+            Toast.show({
+              type: 'success',
+              text1: `${date?.title} added to cart`,
+              position: 'bottom'
+            });
+            dispatch(fetchCartItems(user));
+          })
+          .catch((error) => {
+            console.error('Failed to add to cart:', error);
+          });
+      }
+    } else {
+      Alert.alert('Please Login');
     }
-    else{
-      Alert.alert("Please Login")
-     
-    }
-   
   };
   const deleteWishlist = (data) => {
  
   
      dispatch(deleteWishlistItem(data)) 
-             .then(() => { Alert.alert("Item removed from wishlist")
+             .then(() => {
                dispatch(fetchWishlistItems(user));
              })
              .catch((error) => {
@@ -117,7 +156,7 @@ const { wishitems, status } = useSelector((state) => state.wishlist);
       data.contact_id=user.contact_id
     
        dispatch(addToWishlist(data)) 
-               .then(() => { Alert.alert("Item added to wishlist")
+               .then(() => { 
                  dispatch(fetchWishlistItems(user));
                })
                .catch((error) => {
@@ -181,6 +220,30 @@ const { wishitems, status } = useSelector((state) => state.wishlist);
             res.data.data.forEach((element) => {
               element.tag = String(element.tag).split(",");
               element.images = String(element.images).split(",");
+               if (element.grades != null) {
+            element.grades = String(element.grades)
+              .split(",")
+              .map(grade => grade.trim())
+              .filter(el => el !== null && el !== '');
+          } else {
+            element.grades = [];
+          }
+           if (element.count != null) {
+            element.count = String(element.count)
+              .split(",")
+              .map(grade => grade.trim())
+              .filter(el => el !== null && el !== '');
+          } else {
+            element.count = [];
+          }
+           if (element.origin != null) {
+            element.origin = String(element.origin)
+              .split(",")
+              .map(grade => grade.trim())
+              .filter(el => el !== null && el !== '');
+          } else {
+            element.origin = [];
+          }
             });
             setProducts(res.data.data);
             setLoading(false)
@@ -199,6 +262,30 @@ const { wishitems, status } = useSelector((state) => state.wishlist);
           res.data.data.forEach((element) => {
             element.tag = String(element.tag).split(",");
             element.images = String(element.images).split(",");
+             if (element.grades != null) {
+            element.grades = String(element.grades)
+              .split(",")
+              .map(grade => grade.trim())
+              .filter(el => el !== null && el !== '');
+          } else {
+            element.grades = [];
+          }
+           if (element.count != null) {
+            element.count = String(element.count)
+              .split(",")
+              .map(grade => grade.trim())
+              .filter(el => el !== null && el !== '');
+          } else {
+            element.count = [];
+          }
+           if (element.origin != null) {
+            element.origin = String(element.origin)
+              .split(",")
+              .map(grade => grade.trim())
+              .filter(el => el !== null && el !== '');
+          } else {
+            element.origin = [];
+          }
           });
           setProducts(res.data.data);
           console.log('subcategoriespros',res.data.data);
@@ -215,6 +302,30 @@ const { wishitems, status } = useSelector((state) => state.wishlist);
         res.data.data.forEach((element) => {
           element.tag = String(element.tag).split(",");
           element.images = String(element.images).split(",");
+           if (element.grades != null) {
+            element.grades = String(element.grades)
+              .split(",")
+              .map(grade => grade.trim())
+              .filter(el => el !== null && el !== '');
+          } else {
+            element.grades = [];
+          }
+           if (element.count != null) {
+            element.count = String(element.count)
+              .split(",")
+              .map(grade => grade.trim())
+              .filter(el => el !== null && el !== '');
+          } else {
+            element.count = [];
+          }
+           if (element.origin != null) {
+            element.origin = String(element.origin)
+              .split(",")
+              .map(grade => grade.trim())
+              .filter(el => el !== null && el !== '');
+          } else {
+            element.origin = [];
+          }
         });
         setProducts(res.data.data);
       })
@@ -236,6 +347,20 @@ useEffect(()=>{
     fetchProducts();
     fetchSubcategories();
   }, []);
+
+  // Handle initial subcategory selection when navigating from Categories
+  useEffect(() => {
+    if (initialSubcategoryId && subcategories.length > 0) {
+      const subcategoryToSelect = subcategories.find(
+        sub => sub.sub_category_id === initialSubcategoryId
+      );
+      if (subcategoryToSelect) {
+        setSelectedSubcategories([subcategoryToSelect.sub_category_id]);
+        // Also fetch subcategory types for the selected subcategory
+        fetchSubcategoryTypes(subcategoryToSelect.sub_category_id);
+      }
+    }
+  }, [initialSubcategoryId, subcategories]);
 
   const renderItem = ({ item }) => (
     <View style={styles.card}>
@@ -291,8 +416,8 @@ useEffect(()=>{
       </TouchableOpacity>
         <TouchableOpacity
           onPress={() =>{ 
-               if(item.grades){
-                Alert.alert('Please select grade before adding to cart');
+                if(item.grades && item.grades.length > 0 || item.count && item.count.length > 0 || item.origin && item.origin.length > 0){
+                // Navigate to ProductDetails for grade selection
                 navigation.navigate("ProductDetails", { productId: item.product_id })
                } else{
                 addCart(item)}}
@@ -322,6 +447,7 @@ useEffect(()=>{
       {showSearch && (
         <TextInput
           placeholder="Search products..."
+          placeholderTextColor="#666"
           style={styles.searchBar}
           value={searchQuery}
           onChangeText={setSearchQuery}
@@ -452,7 +578,6 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     alignItems: 'center',
     fontSize: 18,
-    fontWeight: 'bold',
     fontFamily: 'Outfit-Regular',
   },
   searchBar: {
@@ -497,7 +622,6 @@ const styles = StyleSheet.create({
   
   name: {
     marginTop: 10,
-    fontWeight: 'bold',
     fontFamily: 'Outfit-Regular',
     fontSize: 14,
     paddingHorizontal: 8,
@@ -542,7 +666,6 @@ const styles = StyleSheet.create({
   discountText: {
     color: '#fff',
     fontSize: 10,
-    fontWeight: 'bold',
     fontFamily: 'Outfit-Regular',
   },
 
@@ -560,13 +683,11 @@ const styles = StyleSheet.create({
   qtyBtn: {
     fontSize: 18,
     paddingHorizontal: 10,
-    fontWeight: 'bold',
     color: '#00AA88',
     fontFamily: 'Outfit-Regular',
   },
   qtyNumber: {
     fontSize: 14,
-    fontWeight: 'bold',
     fontFamily: 'Outfit-Regular',
   },
   sectionTitle: {

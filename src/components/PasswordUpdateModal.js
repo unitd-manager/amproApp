@@ -1,7 +1,21 @@
 import React from 'react';
-import { Modal, View, Text, TouchableOpacity, StyleSheet, Image } from 'react-native';
+import { Modal, View, Text, TouchableOpacity, StyleSheet,BackHandler } from 'react-native';
 
 const PasswordUpdateModal = ({ visible, onClose }) => {
+  useEffect(() => {
+    const backHandler = BackHandler.addEventListener(
+      "hardwareBackPress",
+      () => {
+        if (visible) {
+          onClose(); 
+          return true; // prevent app exit
+        }
+        return false;
+      }
+    );
+
+    return () => backHandler.remove();
+  }, [visible]);
   return (
     <Modal
       transparent={true}
@@ -16,7 +30,7 @@ const PasswordUpdateModal = ({ visible, onClose }) => {
           <Text style={styles.subTitle}>Successfully</Text>
           <Text style={styles.message}>Your password has been updated successfully</Text>
           <TouchableOpacity style={styles.button} onPress={onClose}>
-            <Text style={styles.buttonText}>Login</Text>
+            <Text style={styles.buttonText}>Close</Text>
           </TouchableOpacity>
         </View>
       </View>
@@ -45,6 +59,7 @@ const styles = StyleSheet.create({
   },
   title: {
     fontSize: 24,
+    color:'#000',
     fontWeight: 'bold',
     marginBottom: 5,
   },
@@ -55,6 +70,7 @@ const styles = StyleSheet.create({
   },
   message: {
     fontSize: 14,
+    color: '#00bcd4',
     textAlign: 'center',
     marginBottom: 20,
   },

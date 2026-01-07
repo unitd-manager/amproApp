@@ -1,5 +1,7 @@
 import React, { createContext, useState, useEffect } from 'react';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import store from '../redux/store';
+import { fetchNotifications, fetchUnreadCount } from '../redux/slices/notificationSlice';
 
 export const AuthContext = createContext();
 
@@ -20,6 +22,14 @@ export const AuthProvider = ({ children }) => {
   const login = async (userData) => {
     await AsyncStorage.setItem('user', JSON.stringify(userData));
     setUser(userData);
+    
+    // Fetch notifications after successful login
+    try {
+      await store.dispatch(fetchNotifications()).unwrap();
+      await store.dispatch(fetchUnreadCount()).unwrap();
+    } catch (error) {
+      console.log('Failed to fetch notifications after login:', error);
+    }
   };
 
   const logout = async () => {

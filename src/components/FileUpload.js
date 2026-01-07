@@ -47,6 +47,7 @@ setReceiptFile(null);
     <View style={styles.container}>
       <Text style={[styles.header, { marginTop: 20 }]}>{title}</Text>
     <TouchableOpacity style={styles.uploadBox}  onPress={handlePick} >
+            <Image source={require('../assets/images/cloud.jpeg')} style={styles.uploadIcon} />
             <Text style={styles.uploadText}>Upload your file here</Text>
           </TouchableOpacity>
       {receiptFile && <View style={styles.previewContainer}>{renderPreview()}</View>}
@@ -76,7 +77,14 @@ const styles = StyleSheet.create({
     },
     uploadText: {
       color: '#888',
+      marginTop: 5,
       fontFamily: 'Outfit-Regular',
+    },
+    uploadIcon: {
+      width: 50,
+      height: 50,
+      marginBottom: 10,
+     
     },
          uploadLink: {
           margin: 5,
