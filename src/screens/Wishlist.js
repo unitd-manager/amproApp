@@ -35,7 +35,7 @@ import { AuthContext } from "../context/AuthContext";
 
 const clearCartItems=()=>{
     dispatch(clearWishlist(user)).then(()=>{
-        Alert.alert('Wishlist cleared')
+      
      dispatch(fetchWishlistItems(user));
                  })
                  .catch((error) => {
@@ -45,7 +45,7 @@ const clearCartItems=()=>{
 
   const handleDelete = (item) => {
     dispatch(deleteWishlistItem(item)).then(()=>{
-        Alert.alert('Item deleted')
+      
      dispatch(fetchWishlistItems(user));
                  })
                  .catch((error) => {
@@ -113,7 +113,7 @@ const handleIncreaseQuantity = useCallback(
         <Text style={styles.emptyText}>Your wishlist is empty</Text>
         <TouchableOpacity
   style={styles.homeButton}
-  onPress={() => navigation.navigate("Home")}
+  onPress={() => navigation.navigate("MainApp", { screen: "Home", params: { screen: "HomeMain" } })}
 >
   <View style={styles.homeButtonContent}>
     <Icon name="home-outline" size={20} color="#fff" style={{ marginRight: 8 }} />

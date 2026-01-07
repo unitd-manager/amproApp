@@ -9,7 +9,7 @@ const Categories = ({navigation}) => {
 	const[subCategories,setSubCategories]=useState([]);
 	const[subCategoryTypes,setSubCategoryTypes]=useState([]);
 
-  //const imagebaseurl='https://amproadmin.unitdtechnologies.com/storage/uploads/';
+  //const imagebaseurl='https://Amproadmin.unitdtechnologies.com/storage/uploads/';
 
 	const formatCategoryData = (categories, subcategories) => {
     return categories.map(category => ({
@@ -58,7 +58,7 @@ const Categories = ({navigation}) => {
 
   return (
     <ScrollView style={styles.container}>
-      <Text style={styles.header}>Categoes</Text>
+      <Text style={styles.header}>Categories</Text>
 
       {categoryData?.map((category, index) => (
         <View key={index}>
@@ -78,7 +78,28 @@ const Categories = ({navigation}) => {
 
           <View style={styles.subCategoryWrapper}>
             {category?.subcategories?.map((item, subIndex) => (
-              <View key={subIndex} style={styles.subCategoryItem}>
+              <TouchableOpacity 
+                key={subIndex} 
+                style={[
+                  styles.subCategoryItem,
+                  (subIndex + 1) % 4 === 0 ? styles.subCategoryItemLast : {}
+                ]}
+                onPress={() => {
+                  // Find the subcategory ID from the subCategories array
+                  const subcategoryData = subCategories.find(
+                    sub => sub.sub_category_title === item.name && sub.category_id === category.category_id
+                  );
+                  
+                  if (subcategoryData) {
+                    navigation.navigate('ProductList', {
+                      categoryId: category.category_id,
+                      categoryName: category.title,
+                      initialSubcategoryId: subcategoryData.sub_category_id,
+                      subcategoryName: item.name
+                    });
+                  }
+                }}
+              >
             <Image
   source={{
     uri: item.images[0]
@@ -88,13 +109,13 @@ const Categories = ({navigation}) => {
   style={styles.image}
   onError={() => {
     // Fallback to another base URL if first fails
-    item.images[0] = 'http://amproadmin.unitdtechnologies.com/storage/uploads/' + item.images[0];
+    item.images[0] = 'http://Amproadmin.unitdtechnologies.com/storage/uploads/' + item.images[0];
   }}
 />
 
 
                 <Text style={styles.subCategoryText}>{item.name}</Text>
-              </View>
+              </TouchableOpacity>
             ))}
           </View>
         </View>
@@ -125,13 +146,19 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     flexWrap: 'wrap',
     justifyContent: 'flex-start',
-    gap: 20,
+    marginBottom: 5,
   },
   subCategoryItem: {
-    width: '22%',
     alignItems: 'center',
-    marginBottom: 20,
+    marginBottom: 8,
+    width: '22.5%',
+    marginRight: '2.5%',
     fontFamily: 'Outfit-Regular',
+    padding: 8,
+    borderRadius: 8,
+  },
+  subCategoryItemLast: {
+    marginRight: 0,
   },
   image: {
     width: 60,
@@ -143,12 +170,13 @@ const styles = StyleSheet.create({
     fontSize: 12,
     textAlign: 'center',
     fontFamily: 'Outfit-Regular',
+    color: '#333',
   },
   categoryRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginTop: 20,
-    marginBottom: 20,
+    marginTop: 5,
+    marginBottom: 5,
     fontFamily: 'Outfit-Regular',
   },
   

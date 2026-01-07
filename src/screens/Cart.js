@@ -100,14 +100,16 @@ const handleIncreaseQuantity = useCallback(
     [dispatch]
   );
 const generateCode = () => {
-    api
-      .post('/commonApi/getCodeValues', { type: 'enquiry' })
-      .then((res) => {
-        placeEnquiry(res.data.data);
-      })
-      .catch(() => {
-        placeEnquiry('');
-      });
+	 navigation.navigate('Checkout')
+    // api
+    //   .post('/commonApi/getCodeValues', { type: 'enquiry' })
+    //   .then((res) => {
+    //     // placeEnquiry(res.data.data);
+	// 	navigate('')
+    //   })
+    //   .catch(() => {
+    //     placeEnquiry('');
+    //   });
   };
 
   const placeEnquiry = (code) => {     
@@ -169,7 +171,7 @@ const generateCode = () => {
   
     const to = mailId.email;
     const toCustomer = user.email; // Customer's Email
-    const subject = "Smartwave Product Details";
+    const subject = "Ampro Product Details";
     
     // Group all products into an array
     const dynamic_template_data = {
@@ -362,7 +364,7 @@ api
 				{items.length>0 &&<View style={styles.view4}>
 					<TouchableOpacity style={styles.button4} onPress={()=>generateCode()}>
 						<Text style={styles.text9}>
-							{"Enquire Now"}
+							{"Proceed to Checkout"}
 						</Text>
 					</TouchableOpacity>
 				</View>}

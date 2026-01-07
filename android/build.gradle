@@ -19,3 +19,14 @@ buildscript {
 }
 
 apply plugin: "com.facebook.react.rootproject"
+
+allprojects {
+    repositories {
+        google()
+        mavenCentral()
+        // Explicit Google Maven URL as fallback
+        maven { url 'https://dl.google.com/dl/android/maven2/' }
+        // Local maven for some react-native modules (if needed)
+        maven { url("${rootDir}/../node_modules/react-native/android") }
+    }
+}

@@ -1,5 +1,5 @@
 import React, { useState,useEffect } from 'react';
-import { View, Text, TextInput, TouchableOpacity, StyleSheet, Image, Alert } from 'react-native';
+import { View, Text, TextInput, TouchableOpacity, StyleSheet, Image, Alert, KeyboardAvoidingView, ScrollView, Platform } from 'react-native';
 import api from '../constants/api';
 import Icon from 'react-native-vector-icons/MaterialIcons'; // Or Feather, FontAwesome, etc.
 
@@ -17,13 +17,13 @@ const ForgotPasswordScreen = ({navigation}) => {
     const emailList = contactMails.map((contact) => contact.email);
   
     if (!emailList.includes(email)) {
-      Alert.alert("This email is not registered.");
+      Alert.alert("Alert", "The entered email is not registred, please try again with correct email adderss.");
       return;
     }
     api
       .post("api/forgotpass", { email: email })
       .then((res) => {
-        Alert.alert("otp to reset password is sent to the mail.");
+        Alert.alert("OTP", "Your OTP has been sent to the registred email address for reset password");
 		navigation.navigate('Verification', { email });
       })
       .catch(() => {
@@ -67,51 +67,61 @@ useEffect(()=>{
 },[])
  
   return (
-    <View style={styles.container}>
-      <Text style={styles.headerText}>
-        Forgot <Text style={styles.highlight}>Password</Text>
-      </Text>
-      <Text style={styles.subText}>
-        Select which contact details should we use to reset your password.
-      </Text>
+    <KeyboardAvoidingView 
+      style={styles.container}
+      behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+      keyboardVerticalOffset={Platform.OS === 'ios' ? 0 : 20}
+    >
+      <ScrollView 
+        contentContainerStyle={styles.scrollContainer}
+        showsVerticalScrollIndicator={false}
+        keyboardShouldPersistTaps="handled"
+      >
+        <Text style={styles.headerText}>
+          Forgot <Text style={styles.highlight}>Password</Text>
+        </Text>
+        <Text style={styles.subText}>
+          Select which contact details should we use to reset your password.
+        </Text>
 
-      <Image
-        source={require('../assets/images/banner/forgot.png')} // Add your image to assets
-        style={styles.image}
-        resizeMode="contain"
-      />
-
-      {/* <View style={styles.inputBox}>
-        <Text style={styles.label}>Send OTP via Email</Text>
-        <TextInput
-          style={styles.input}
-          placeholder="Enter your email"
-          placeholderTextColor="#aaa"
-          value={email}
-          onChangeText={setEmail}
-          keyboardType="email-address"
+        <Image
+          source={require('../assets/images/banner/forgot.png')}
+          style={styles.image}
+          resizeMode="contain"
+          defaultSource={require('../assets/images/banner/forgot.png')}
         />
-      </View> */}
-	  <View style={styles.inputBox}>
-  <Text style={styles.label}>Send OTP via Email</Text>
-  <View style={styles.inputContainer}>
-    <Icon name="email" size={20} color="#888" style={styles.inputIcon} />
-    <TextInput
-      style={styles.input}
-      placeholder="Enter your email"
-      placeholderTextColor="#aaa"
-      value={email}
-      onChangeText={setEmail}
-      keyboardType="email-address"
-    />
-  </View>
-</View>
 
+        {/* <View style={styles.inputBox}>
+          <Text style={styles.label}>Send OTP via Email</Text>
+          <TextInput
+            style={styles.input}
+            placeholder="Enter your email"
+            placeholderTextColor="#aaa"
+            value={email}
+            onChangeText={setEmail}
+            keyboardType="email-address"
+          />
+        </View> */}
+        <View style={styles.inputBox}>
+          <Text style={styles.label}>Send OTP via Email</Text>
+          <View style={styles.inputContainer}>
+            <Icon name="email" size={20} color="#888" style={styles.inputIcon} />
+            <TextInput
+              style={styles.input}
+              placeholder="Enter your email"
+              placeholderTextColor="#aaa"
+              value={email}
+              onChangeText={setEmail}
+              keyboardType="email-address"
+            />
+          </View>
+        </View>
 
-      <TouchableOpacity style={styles.button} onPress={handleContinue}>
-        <Text style={styles.buttonText}>Continue</Text>
-      </TouchableOpacity>
-    </View>
+        <TouchableOpacity style={styles.button} onPress={handleContinue}>
+          <Text style={styles.buttonText}>Continue</Text>
+        </TouchableOpacity>
+      </ScrollView>
+    </KeyboardAvoidingView>
   );
 };
 
@@ -121,9 +131,12 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: '#fff',
+  },
+  scrollContainer: {
+    flexGrow: 1,
     padding: 24,
     justifyContent: 'flex-start',
-	  fontFamily: 'Outfit-Regular',
+    fontFamily: 'Outfit-Regular',
   },
    headerText: {
 	marginTop: 20,

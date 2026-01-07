@@ -11,7 +11,7 @@ const FileList = ({ receiptUrl, deleteFile }) => {
         <View key={index} style={styles.item}>
           <TouchableOpacity
             onPress={() =>
-              Linking.openURL(`https://smartwave.unitdtechnologies.com:2014/category/download/${res.name}`)
+              Linking.openURL(`https://Ampro.unitdtechnologies.com:2014/category/download/${res.name}`)
             }
             style={styles.link}
           >
@@ -20,7 +20,7 @@ const FileList = ({ receiptUrl, deleteFile }) => {
           </TouchableOpacity>
 
           <TouchableOpacity onPress={() => deleteFile(res.media_id)} style={styles.deleteButton}>
-            <Icon name="trash" size={16} color="red" />
+            <Icon name="times-circle" size={16} color="#ADD8E6" />
           </TouchableOpacity>
         </View>
       ))}

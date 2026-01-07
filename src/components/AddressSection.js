@@ -15,6 +15,9 @@ const AddressSection = ({ profile }) => {
       <Text style={styles.address}>
         {[profile?.address_state, profile?.address_po_code].filter(Boolean).join(' - ')}
       </Text>
+      <Text style={styles.address}>
+        {profile?.address_country_code || ''}
+      </Text>
     </View>
   );
 };

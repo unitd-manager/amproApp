@@ -8,7 +8,7 @@ const AboutUsScreen = () => {
     <ScrollView style={styles.container}>
       {/* Heading */}
       <Text style={styles.pageTitle}>Who Are We</Text>
-      <Text style={styles.subTitle}>Welcome To Smartwave</Text>
+      <Text style={styles.subTitle}>Welcome To Ampro</Text>
 
       {/* Images */}
       <Image source={require('../assets/images/banner/vision.jpg')} style={styles.image} />
@@ -45,7 +45,7 @@ const AboutUsScreen = () => {
       </View>
 <LogoSlider/>
       {/* Footer Placeholder */}
-      <Text style={styles.footer}>© 2025 SmartWave — All Rights Reserved</Text>
+      <Text style={styles.footer}>© 2025 Ampro — All Rights Reserved</Text>
     </ScrollView>
   );
 };

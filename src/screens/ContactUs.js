@@ -12,7 +12,8 @@ import {
 import { Button } from 'react-native-paper';
 import Icon from 'react-native-vector-icons/FontAwesome';
 import api from '../constants/api';
-
+import axios from 'axios';
+import CountryPickerModal from '../components/CountryPickerModal';
 const ContactUs = () => {
   const scheme = useColorScheme();
   const isDarkMode = scheme === 'dark';
@@ -41,6 +42,42 @@ const ContactUs = () => {
   const [address, setAddress] = useState();
   const [mailId, setmailId] = useState("");
   const [googlemapdata, setGoogleMapData] = useState('');
+const [countries, setCountries] = useState([]);
+const [filteredCountries, setFilteredCountries] = useState([]);
+const [search, setSearch] = useState('');
+const [showPicker, setShowPicker] = useState(false);
+
+useEffect(() => {
+  axios
+    .get('https://restcountries.com/v3.1/all?fields=name,idd,cca2')
+    .then(res => {
+      const list = res.data
+        .map(c => ({
+          name: c.name?.common,
+          dial_code:
+            c.idd?.root && c.idd?.suffixes?.length
+              ? `${c.idd.root}${c.idd.suffixes[0]}`
+              : '',
+          cca2: c.cca2
+        }))
+        .filter(c => c.dial_code); // remove empty codes
+
+      setCountries(list);
+      setFilteredCountries(list);
+    });
+}, []);
+const handleSearch = text => {
+  setSearch(text);
+  const lower = text.toLowerCase();
+
+  setFilteredCountries(
+    countries.filter(
+      c =>
+        c.name.toLowerCase().includes(lower) ||
+        c.dial_code.includes(lower)
+    )
+  );
+};
 
   const getEnquiryEmail = () => {
     api.get("/setting/getEnquiryMailId").then((res) => {
@@ -193,13 +230,40 @@ const ContactUs = () => {
           keyboardType="email-address"
           error={errors.email}
         />
-        <CustomInput
-          placeholder="Contact No"
-          value={user.contactNo}
-          onChangeText={(text) => handleChange('contactNo', text)}
-          keyboardType="phone-pad"
-          error={errors.contactNo}
-        />
+        <View style={{ marginBottom: 24 }}>
+  <View style={styles.row}>
+    <TouchableOpacity
+      style={styles.countryCodeBtn}
+      onPress={() => setShowPicker(true)}
+    >
+      <Text style={styles.codeText}>
+        {user.mobile_country_code || '+91'}
+      </Text>
+    </TouchableOpacity>
+
+    <TextInput
+      style={styles.input}
+      placeholder="Contact No"
+      keyboardType="phone-pad"
+      value={user.contactNo}
+      onChangeText={text => handleChange('contactNo', text)}
+    />
+  </View>
+
+<CountryPickerModal
+  visible={showPicker}
+  search={search}
+  onSearch={handleSearch}
+  countries={filteredCountries}
+  onClose={() => setShowPicker(false)}
+  onSelect={item => {
+    handleChange('mobile_country_code', item.dial_code);
+    setShowPicker(false);
+  }}
+/>
+
+</View>
+
         <CustomInput
           placeholder="Message"
           value={user.comments}
@@ -345,7 +409,49 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     marginTop: 10, // optional
   },
-  
+  countryCodeBtn: {
+    height: 48,
+    minWidth: 90,
+    borderWidth: 1,
+    borderColor: '#ced4da',
+    borderRadius: 6,
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginRight: 8
+  },
+  codeText: {
+    fontFamily: 'Outfit-Regular',
+    color: '#000'
+  },
+  input: {
+    flex: 1,
+    height: 48,
+    borderWidth: 1,
+    borderColor: '#ced4da',
+    borderRadius: 6,
+    paddingHorizontal: 12
+  },
+  searchInput: {
+    borderWidth: 1,
+    borderColor: '#ced4da',
+    borderRadius: 6,
+    padding: 12,
+    marginBottom: 12
+  },
+  countryRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingVertical: 10
+  },
+  flag: {
+    width: 24,
+    height: 18,
+    marginRight: 12
+  },
+  countryText: {
+    fontSize: 14
+  }
+
 });
 
 export default ContactUs;

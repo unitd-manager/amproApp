@@ -29,8 +29,8 @@ const AddressSelector = ({ addresses = [], onSelect }) => {
                 ? 'Profile Address'
                 : item.shipper_name || 'Address'}</Text>
         <Text style={styles.address}>{item.address_flat}, {item.address_street}{'\n'}
-            {item.address_city}, {item.address_town} - {item.address_po_code}{'\n'}
-            {item.address_state}, {item.address_country}</Text>
+            {item.address_city}, {item.address_town}{'\n'}
+             {item.address_state}, {item.address_country} - {item.address_po_code}</Text>
       </View>
       <View style={styles.radioCircle}>
         {selectedId === item.customer_address_id && <View style={styles.selectedDot} />}
