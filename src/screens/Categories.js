@@ -109,7 +109,7 @@ const Categories = ({navigation}) => {
   style={styles.image}
   onError={() => {
     // Fallback to another base URL if first fails
-    item.images[0] = 'http://Amproadmin.unitdtechnologies.com/storage/uploads/' + item.images[0];
+    item.images[0] = 'http://amproadmin.zaitunsoftsolutions.com/storage/uploads/' + item.images[0];
   }}
 />
 

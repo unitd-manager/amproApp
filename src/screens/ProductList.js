@@ -107,7 +107,7 @@ const { items: cartItems } = useSelector((state) => state.cart);
           .then(() => {
             Toast.show({
               type: 'success',
-              text1: `${date?.title} quantity updated in cart`,
+              text1: `${data?.title} quantity updated in cart`,
               position: 'bottom'
             });
             dispatch(fetchCartItems(user));
@@ -121,7 +121,7 @@ const { items: cartItems } = useSelector((state) => state.cart);
           .then(() => {
             Toast.show({
               type: 'success',
-              text1: `${date?.title} added to cart`,
+              text1: `${data?.title} added to cart`,
               position: 'bottom'
             });
             dispatch(fetchCartItems(user));

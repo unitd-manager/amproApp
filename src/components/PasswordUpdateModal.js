@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import { Modal, View, Text, TouchableOpacity, StyleSheet,BackHandler } from 'react-native';
 
 const PasswordUpdateModal = ({ visible, onClose }) => {

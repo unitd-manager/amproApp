@@ -1,5 +1,5 @@
 import React, { useLayoutEffect, useState, useEffect, useContext } from 'react';
-import { SafeAreaView, StyleSheet, Text, TouchableOpacity, View, Alert } from 'react-native';
+import { SafeAreaView, StyleSheet, Text, TouchableOpacity, View, Alert, RefreshControl } from 'react-native';
 import { FlatList } from 'react-native-gesture-handler';
 import api from "../constants/api";
 import { useSelector, useDispatch } from 'react-redux';
@@ -62,11 +62,10 @@ const OrderRow = ({ label, value, theme }) => (
 const Orders = ({ navigation, theme }) => {
   const safeTheme = { ...defaultTheme, ...theme }; // ✅ merge defaults with passed theme
   const [activeTab, setActiveTab] = useState(0);
-const [userContactId, setUserContactId] = useState(null)
-  // const [screen, setScreen] = useState(0)
-  const [orders, setOrders] = useState([]) // State for orders
-  // const [selected] = useState([true, false, false, false])
- 
+  const [userContactId, setUserContactId] = useState(null);
+  const [orders, setOrders] = useState([]); // State for orders
+  const [refreshing, setRefreshing] = useState(false);
+  
   const { user, logout } = useContext(AuthContext);
 
   const dispatch = useDispatch();
@@ -75,93 +74,62 @@ const [userContactId, setUserContactId] = useState(null)
     navigation.navigate("Login");
   };
   
-
-  // Fetch data from API
-  useEffect(() => {
-    const fetchOrders = async () => {
-      try {
-        // const userData = await AsyncStorage.getItem("USER")
-        // const user = userData ? JSON.parse(userData) : null
-        // setUserContactId(user && user.contact_id)
-        // if (user && user.contact_id) {
-       
-        console.log('Making API request with contact_id:', user.contact_id)
-        const response = await api.post("/orders/getOrdersByContactId", {
-            // contact_id: user.contact_id
-             contact_id: user.contact_id
-          })
-          
-          console.log('API Response:', response)
-          console.log('API Response Data:', response.data)
-          
-          if (response.data && response.data.data) {
-            console.log('Orders from API:', response.data.data)
-            // Transform API data to match the expected format
-            const transformedOrders = {
-              onHold: response.data.data.filter(order => order.order_status === 'pending' || order.order_status === 'on_hold'),
-              processing: response.data.data.filter(order => order.order_status === 'processing'),
-              completed: response.data.data.filter(order => order.order_status === 'completed')
-            }
-            console.log('Transformed Orders:', transformedOrders)
-            setOrders(transformedOrders)
-          } else {
-            setOrders(response.data.data)
-          }
-        // }
-        // else {
-        // Alert.alert(
-        //   'Please Login',
-        //   'You need to login to add items to the cart.',
-        //   [
-        //      {
-        //       text: 'Cancel',
-        //       style: 'cancel',
-        //     },
-        //     {
-        //       text: 'Login',
-        //       onPress: onPressSignIn,
-        //     },
-        //   ]
-        // );
-        // }
-      } catch (error) {
-        console.error("Error fetching orders:", error)
-        console.error("Error response:", error.response)
-        console.error("Error status:", error.response?.status)
-        console.error("Error data:", error.response?.data)
-        console.error("Error message:", error.message)
-        
-        // Fallback to mock data if API fails
-        const mockOrders = {
-          onHold: [],
-          processing: [],
-          completed: []
+  // 🟢 Fetch orders from API
+  const fetchOrders = async () => {
+    try {
+      console.log('Making API request with contact_id:', user.contact_id)
+      const response = await api.post("/orders/getOrdersByContactId", {
+        contact_id: user.contact_id
+      })
+      
+      console.log('API Response:', response)
+      console.log('API Response Data:', response.data)
+      
+      if (response.data && response.data.data) {
+        console.log('Orders from API:', response.data.data)
+        // Transform API data to match the expected format
+        const transformedOrders = {
+          processing: response.data.data.filter(order => order.order_status === 'pending'),
+          completed: response.data.data.filter(order => order.order_status === 'completed')
         }
-        setOrders([])
+        console.log('Transformed Orders:', transformedOrders)
+        setOrders(transformedOrders)
+      } else {
+        setOrders(response.data.data)
       }
+    } catch (error) {
+      console.error("Error fetching orders:", error)
+      console.error("Error response:", error.response)
+      console.error("Error status:", error.response?.status)
+      console.error("Error data:", error.response?.data)
+      console.error("Error message:", error.message)
+      
+      // Fallback to mock data if API fails
+      const mockOrders = {
+        onHold: [],
+        processing: [],
+        completed: []
+      }
+      setOrders([])
     }
+  };
 
-    fetchOrders()
-  }, [])
-  // Sample data - Replace with API call
+  // 🟢 Handle refresh
+  const onRefresh = async () => {
+    setRefreshing(true);
+    try {
+      await fetchOrders();
+      console.log('✅ Orders refreshed successfully');
+    } catch (error) {
+      console.error('Error refreshing orders:', error);
+    } finally {
+      setRefreshing(false);
+    }
+  };
+  // 🟢 Initial load of orders
   useEffect(() => {
-    const mockOrders = {
-      onHold: [
-        { id: '#123', date: '17/01/2021', status: 'On Hold', paymentMethod: 'Cash on Delivery', total: '$80.00' },
-        { id: '#136', date: '17/05/2021', status: 'On Hold', paymentMethod: 'Paypal', total: '$190.00' },
-      ],
-      processing: [
-        { id: '#124', date: '18/01/2021', status: 'Processing', paymentMethod: 'Credit Card', total: '$120.00' },
-        { id: '#137', date: '19/05/2021', status: 'Processing', paymentMethod: 'RazorPay', total: '$150.00' },
-      ],
-      completed: [
-        { id: '#125', date: '20/01/2021', status: 'Completed', paymentMethod: 'Paypal', total: '$200.00' },
-        { id: '#138', date: '21/05/2021', status: 'Completed', paymentMethod: 'Cash on Delivery', total: '$90.00' },
-      ],
-    };
-
-    setOrders([]);
-  }, []);
+    fetchOrders();
+  }, [user?.contact_id]);
 
   useLayoutEffect(() => {
     navigation.setOptions({
@@ -175,9 +143,8 @@ const [userContactId, setUserContactId] = useState(null)
   }, [navigation, safeTheme]);
 
   const tabs = [
-    { id: 0, title: 'On Hold', data: orders.onHold },
-    { id: 1, title: 'Processing', data: orders.processing },
-    { id: 2, title: 'Completed', data: orders.completed },
+    { id: 0, title: 'Processing', data: orders.processing },
+    { id: 1, title: 'Completed', data: orders.completed },
   ];
 
   const renderTab = ({ item }) => (
@@ -185,7 +152,7 @@ const [userContactId, setUserContactId] = useState(null)
       onPress={() => setActiveTab(item.id)}
       style={[
         styles.tab,
-        { borderBottomColor: safeTheme.primary, borderBottomWidth: activeTab === item.id ? 2 : 0 },
+        { borderBottomColor: safeTheme.primary, borderBottomWidth: activeTab === item.id ? 1 : 0 },
       ]}>
       <Text
         style={[
@@ -201,7 +168,7 @@ const [userContactId, setUserContactId] = useState(null)
   );
 
   return (
-    <SafeAreaView style={[styles.container, { backgroundColor: safeTheme.primaryBackgroundColor }]}>
+     <SafeAreaView style={[styles.container, { backgroundColor: safeTheme.primaryBackgroundColor }]}>
       <FlatList
         horizontal
         data={tabs}
@@ -211,11 +178,23 @@ const [userContactId, setUserContactId] = useState(null)
         showsHorizontalScrollIndicator={false}
       />
 
-      <View style={styles.orderList}>
-        {tabs[activeTab]?.data?.map((order, index) => (
-          <OrderCard key={index} order={order} theme={safeTheme} navigation={navigation} />
-        ))}
-      </View>
+      <FlatList
+        data={tabs[activeTab]?.data || []}
+        renderItem={({ item }) => (
+          <OrderCard order={item} theme={safeTheme} navigation={navigation} />
+        )}
+        keyExtractor={(item, index) => index.toString()}
+        contentContainerStyle={styles.orderList}
+        scrollEnabled={true}
+        refreshControl={
+          <RefreshControl
+            refreshing={refreshing}
+            onRefresh={onRefresh}
+            colors={['#3498db']}
+            progressBackgroundColor="#fff"
+          />
+        }
+      />
     </SafeAreaView>
   );
 };
@@ -225,7 +204,7 @@ const styles = StyleSheet.create({
   tabList: { maxHeight: 60 ,fontFamily: 'Outfit-Regular'},
   tab: { padding: 15, marginHorizontal: 10 },
   tabText: { fontSize: 16,fontFamily: 'Outfit-Regular' },
-  orderList: { flex: 1, padding: 10 },
+  orderList: { paddingHorizontal: 10, paddingBottom: 10 },
   orderCard: {
     padding: 15,
     borderRadius: 12,

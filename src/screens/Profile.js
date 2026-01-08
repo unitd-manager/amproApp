@@ -103,10 +103,10 @@ address_country_code: profile.address_country_code,
           {/* {renderInput('bio', 'Bio')} */}
           {renderInput('email', 'Email', 'email-address')}
           {renderInput('mobile', 'Mobile', 'phone-pad')}
-          {renderInput('gst', 'GST/Tax Registration Number')}
+          {/* {renderInput('gst', 'GST/Tax Registration Number')}
           {renderInput('fssai', 'FSSAI Number')}
           {renderInput('iec', 'Import Export License')}
-          {renderInput('pan', 'PAN/BRC')}
+          {renderInput('pan', 'PAN/BRC')} */}
 
           <Text style={styles.sectionHeader}>Address Details</Text>
           {renderInput('address1', 'Address Line 1')}

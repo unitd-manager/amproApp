@@ -101,15 +101,7 @@ const handleIncreaseQuantity = useCallback(
   );
 const generateCode = () => {
 	 navigation.navigate('Checkout')
-    // api
-    //   .post('/commonApi/getCodeValues', { type: 'enquiry' })
-    //   .then((res) => {
-    //     // placeEnquiry(res.data.data);
-	// 	navigate('')
-    //   })
-    //   .catch(() => {
-    //     placeEnquiry('');
-    //   });
+    
   };
 
   const placeEnquiry = (code) => {     

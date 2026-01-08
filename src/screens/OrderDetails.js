@@ -1,8 +1,10 @@
-import React, { useLayoutEffect, useState, useEffect } from 'react';
-import { SafeAreaView, StyleSheet, Text, View, ScrollView, ActivityIndicator, Image, Dimensions } from 'react-native';
+import React, { useLayoutEffect, useState, useEffect, useContext } from 'react';
+import { SafeAreaView, StyleSheet, Text, View, ScrollView, ActivityIndicator, Image, Dimensions, TouchableOpacity, Alert } from 'react-native';
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import api from "../constants/api"; // ✅ axios instance
 import imageBase from '../constants/imageBase';
+import RazorpayCheckout from 'react-native-razorpay';
+import { AuthContext } from '../context/AuthContext';
 
 // 🎨 Theme
 const theme = {
@@ -47,21 +49,236 @@ const OrderStatus = ({ number, label, isSelected }) => (
 
 const OrderDetails = ({ navigation, route }) => {
   const { orderNo } = route.params;
+  const { user: authUser } = useContext(AuthContext);
   const [UserDetails, setUserDetails] = useState({});
   const [orderItem, setOrderItem] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [paymentProcessing, setPaymentProcessing] = useState(false);
   const windowWidth = Dimensions.get('window').width;
+
+  // 🟢 Handle Razorpay Payment
+  const handleRazorpayPayment = async () => {
+    try {
+      setPaymentProcessing(true);
+      const totalAmount = calculateTotal();
+      const amountInPaise = Math.round(parseFloat(totalAmount) * 100); // Convert to paise
+
+      // Get user data from AuthContext first, then fall back to AsyncStorage
+      let currentUserDetails = authUser || UserDetails;
+      console.log('Current user from AuthContext:', authUser);
+      console.log('Current UserDetails from state:', UserDetails);
+      
+      if (!currentUserDetails?.email) {
+        console.log('User data not in context/state, fetching from AsyncStorage with key "user"...');
+        try {
+          const userData = await AsyncStorage.getItem("user"); // lowercase 'user'
+          console.log('Raw user data from AsyncStorage:', userData);
+          if (userData) {
+            currentUserDetails = JSON.parse(userData);
+            console.log('Parsed user details from AsyncStorage:', currentUserDetails);
+            setUserDetails(currentUserDetails);
+          }
+        } catch (error) {
+          console.error('Error fetching from AsyncStorage:', error);
+        }
+      }
+
+      console.log('Final currentUserDetails to use:', currentUserDetails);
+
+      const options = {
+        description: `Payment for Order #${orderNo.order_id}`,
+        image: 'https://i.imgur.com/3g7bs6o.png',
+        currency: 'INR',
+        key: 'rzp_test_1DP5mmOlF5G5ag', // Replace with your Razorpay Test Key
+        amount: amountInPaise,
+        name: 'AMPRO',
+        prefill: {
+          email: currentUserDetails?.email || 'test@example.com',
+          contact: currentUserDetails?.phone || '9999999999',
+          name: currentUserDetails?.name || 'Customer',
+        },
+        theme: { color: '#3498db' }
+      };
+
+      RazorpayCheckout.open(options)
+        .then(async (data) => {
+          // Handle successful payment
+          console.log('Payment successful:', data);
+          
+          // Update order status to completed
+          await updateOrderStatus('completed', data.razorpay_payment_id);
+          
+          // Send confirmation emails to user and admin with current user details
+          await sendConfirmationEmails(data.razorpay_payment_id, currentUserDetails);
+          
+          Alert.alert(
+            'Payment Successful',
+            `Payment ID: ${data.razorpay_payment_id}\n\nYour order has been confirmed. A confirmation email has been sent to you.`,
+            [{ text: 'OK', onPress: () => navigation.goBack() }]
+          );
+        })
+        .catch((error) => {
+          console.log('Payment error:', error);
+          Alert.alert('Payment Failed', `Error: ${error.description || 'Unknown error occurred'}`);
+        })
+        .finally(() => {
+          setPaymentProcessing(false);
+        });
+    } catch (error) {
+      console.error('Payment error:', error);
+      setPaymentProcessing(false);
+      Alert.alert('Error', 'Failed to process payment');
+    }
+  };
+
+  // 🟢 Send Confirmation Emails
+  const sendConfirmationEmails = async (paymentId, userDetails = null) => {
+    try {
+      console.log('Sending confirmation emails for order:', orderNo.order_id);
+      console.log('User details received:', userDetails);
+      console.log('UserDetails from state:', UserDetails);
+      
+      // Use provided userDetails or fall back to state
+      const emailUser = userDetails || UserDetails;
+      
+      // Validate required fields
+      if (!emailUser?.email) {
+        console.warn('❌ User email is missing!');
+        console.warn('emailUser object:', emailUser);
+        console.warn('emailUser.email:', emailUser?.email);
+        console.warn('Email notification skipped.');
+        return { success: false, message: 'User email not available' };
+      }
+
+      // Use name, or fall back to company_name, or use customer_code
+      const userName = emailUser?.name?.trim() || emailUser?.company_name || emailUser?.customer_code || 'Valued Customer';
+      
+      if (!userName) {
+        console.warn('❌ User name could not be determined. Email notification skipped.');
+        return { success: false, message: 'User name not available' };
+      }
+      
+      console.log('✅ User validation passed. Email:', emailUser.email, 'Name:', userName);
+
+      // Transform items to match backend expectations
+      const transformedItems = orderItem.map(item => ({
+        name: item.product_name || item.name || item.item_title || 'Unknown Product',
+        price: item.unit_price || item.price || 0,
+        quantity: item.qty || item.quantity || 1
+      }));
+
+      const emailPayload = {
+        order_id: orderNo.order_id,
+        user_email: emailUser.email,
+        user_name: userName,
+        payment_id: paymentId,
+        order_amount: calculateTotal(),
+        items: transformedItems,
+        shipping_address: {
+          address1: orderNo.shipping_address1 || '',
+          address2: orderNo.shipping_address2 || '',
+          city: orderNo.shipping_address_city || '',
+          state: orderNo.shipping_state || '',
+          postal_code: orderNo.shipping_po_code || ''
+        }
+      };
+
+      console.log('Email payload being sent:', JSON.stringify(emailPayload, null, 2));
+
+      const response = await api.post('/commonApi/sendOrderConfirmation', emailPayload);
+      console.log('Confirmation emails sent:', response.data);
+      return response.data;
+    } catch (error) {
+      console.error('Error sending confirmation emails:', error);
+      console.error('Error status:', error.response?.status);
+      console.error('Error data:', error.response?.data);
+      console.error('Full error:', error.message);
+      
+      // Don't alert user - this is a non-critical error
+      // Email sending failure shouldn't block order completion
+      console.warn('Warning: Email notification may not have been sent');
+      console.warn('Backend error:', error.response?.data?.message);
+      return { success: false };
+    }
+  };
+
+  // 🟢 Update Order Status
+  const updateOrderStatus = async (newStatus, paymentId = null) => {
+    try {
+      const payload = {
+        order_id: orderNo.order_id,
+        order_status: newStatus,
+      };
+
+      if (paymentId) {
+        payload.transaction_id = paymentId;
+      }
+
+      const response = await api.post('/orders/updateOrderStatus', payload);
+      console.log('Order status updated:', response.data);
+      return response.data;
+    } catch (error) {
+      console.error('Error updating order status:', error);
+      Alert.alert('Error', 'Failed to update order status');
+    }
+  };
+
+  // 🟢 Complete Order Handler
+  const handleCompleteOrder = async () => {
+    if (orderNo.order_status === 'completed') {
+      Alert.alert('Info', 'This order is already completed.');
+      return;
+    }
+
+    Alert.alert(
+      'Complete Order',
+      'How would you like to proceed?',
+      [
+        {
+          text: 'Cancel',
+          onPress: () => console.log('Cancelled'),
+          style: 'cancel',
+        },
+        {
+          text: 'Pay with Razorpay',
+          onPress: handleRazorpayPayment,
+        },
+        {
+          text: 'Cash on Delivery',
+          onPress: async () => {
+            await updateOrderStatus('completed');
+            Alert.alert('Success', 'Order status updated to Completed');
+            navigation.goBack();
+          },
+        },
+      ]
+    );
+  };
 
   // 🟢 Fetch user
   const getUserCart = async () => {
     try {
-      const userData = await AsyncStorage.getItem("USER");
+      // First try to use AuthContext user if available
+      if (authUser) {
+        console.log('Using user from AuthContext:', authUser);
+        setUserDetails(authUser);
+        return;
+      }
+      
+      // Fall back to AsyncStorage with correct key 'user' (lowercase)
+      const userData = await AsyncStorage.getItem("user");
       console.log("Raw user data from AsyncStorage:", userData);
-      const user = JSON.parse(userData);
-      console.log("Parsed user details:", user);
-      setUserDetails(user || {});
+      if (userData) {
+        const user = JSON.parse(userData);
+        console.log("Parsed user details:", user);
+        setUserDetails(user || {});
+      } else {
+        console.warn("No user data found in AsyncStorage");
+        setUserDetails({});
+      }
     } catch (error) {
       console.error("Error fetching user data:", error);
+      setUserDetails({});
     }
   };
 
@@ -150,9 +367,9 @@ const OrderDetails = ({ navigation, route }) => {
         
         {/* Status */}
         <View style={styles.statusWrapper}>
-          <OrderStatus number="1" label="On Hold" isSelected={orderNo.order_status === "pending"} />
-          <OrderStatus number="2" label="Processing" isSelected={orderNo.order_status === "processing"} />
-          <OrderStatus number="3" label="Completed" isSelected={orderNo.order_status === "completed"} />
+          {/* <OrderStatus number="1" label="On Hold" isSelected={orderNo.order_status === "pending"} /> */}
+          <OrderStatus number="1" label="Processing" isSelected={orderNo.order_status === "pending"} />
+          <OrderStatus number="2" label="Completed" isSelected={orderNo.order_status === "completed"} />
         </View>
 
         {/* Shipping Address */}
@@ -218,6 +435,24 @@ const OrderDetails = ({ navigation, route }) => {
         {/* Notes */}
         <HeadingText heading="Order Notes" />
         <BodyRowText text={orderNo.notes || "No special instructions"} />
+
+        {/* Complete Order Button */}
+        {orderNo.order_status !== 'completed' && (
+          <TouchableOpacity
+            style={[
+              styles.completeButton,
+              paymentProcessing && styles.completeButtonDisabled
+            ]}
+            onPress={handleCompleteOrder}
+            disabled={paymentProcessing}
+          >
+            {paymentProcessing ? (
+              <ActivityIndicator size="small" color="#fff" />
+            ) : (
+              <Text style={styles.completeButtonText}>Complete Order</Text>
+            )}
+          </TouchableOpacity>
+        )}
       </ScrollView>
     </SafeAreaView>
   );
@@ -274,4 +509,23 @@ const styles = StyleSheet.create({
   summaryContainer: { backgroundColor: '#f8f8f8', padding: 16, borderRadius: 8, marginVertical: 16 },
   loader: { flex: 1, justifyContent: "center", alignItems: "center" },
   debugText: { fontSize: 14,fontFamily: 'Outfit-Regular', color: '#999', marginBottom: 8, fontStyle: 'italic' },
+  completeButton: {
+    backgroundColor: '#3498db',
+    paddingVertical: 14,
+    borderRadius: 8,
+    alignItems: 'center',
+    marginTop: 20,
+    marginBottom: 20,
+    elevation: 3,
+  },
+  completeButtonDisabled: {
+    backgroundColor: '#95a5a6',
+    opacity: 0.6,
+  },
+  completeButtonText: {
+    color: '#fff',
+    fontSize: 16,
+    fontFamily: 'Outfit-Regular',
+    fontWeight: '600',
+  },
 });

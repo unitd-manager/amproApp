@@ -106,7 +106,7 @@ const NewPasswordScreen = ({ route,navigation }) => {
           <Text style={styles.loginLink}>Login</Text>
         </TouchableOpacity>
       </View>
-	   <PasswordUpdateModal visible={modalVisible} onClose={() => {setModalVisible(false); Navigation.navigate('LoginPage')}} />
+	   <PasswordUpdateModal visible={modalVisible} onClose={() => {setModalVisible(false); navigation.navigate('LoginPage')}} />
     
     </View>
   );
