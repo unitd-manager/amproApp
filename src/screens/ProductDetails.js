@@ -257,6 +257,7 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: "#FFFFFF",
     fontFamily: 'Outfit-Regular',
+    color:'#000',
   },
   button: {
     backgroundColor: "#FFFFFF",
@@ -283,6 +284,7 @@ const styles = StyleSheet.create({
     paddingBottom: 19,
     marginBottom: 32,
     fontFamily: 'Outfit-Regular',
+    color:'#000',
   },
   image2: {
     width: 24,
@@ -332,6 +334,7 @@ const styles = StyleSheet.create({
     marginBottom: 215,
     marginHorizontal: 30,
     fontFamily: 'Outfit-Regular',
+    color:'#000',
   },
   row3: {
     flexDirection: "row",
@@ -339,12 +342,14 @@ const styles = StyleSheet.create({
     marginBottom: 15,
     marginHorizontal: 32,
     fontFamily: 'Outfit-Regular',
+    color:'#000',
   },
   row4: {
     flexDirection: 'row',
     alignItems: 'center',
     marginTop: 4, // reduce this
     fontFamily: 'Outfit-Regular',
+    color:'#000',
   },
   
   row5: {
@@ -353,6 +358,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     paddingHorizontal: 20,
     fontFamily: 'Outfit-Regular',
+    color:'#000',
   },
   
   
@@ -362,6 +368,7 @@ const styles = StyleSheet.create({
     marginBottom: 10,
     fontFamily: 'Outfit-Regular',
     marginHorizontal: 32,
+    color:'#000',
   },
   scrollView: {
     flex: 1,
@@ -394,6 +401,7 @@ const styles = StyleSheet.create({
     //fontWeight: 'bold',
     marginRight: 10, // spacing from cart button
     fontFamily: 'Outfit-Regular',
+    color:'#000',
   },  
   
   text6: {
@@ -424,6 +432,7 @@ const styles = StyleSheet.create({
   view: {
     backgroundColor: "#FFFFFF",
     fontFamily: 'Outfit-Regular',
+    color:'#000',
     borderColor: "#DFF6FB",
     borderTopLeftRadius: 15,
     borderTopRightRadius: 15,

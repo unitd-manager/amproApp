@@ -80,31 +80,71 @@ const Checkout = ({navigation}) => {
   const handlePayment = async (orderId) => {
     //const razorpayOrderId = await createRazorpayOrder(calculateTotal(), orderId);
     const razorpayOrderId = orderId;
+    const totalAmount = calculateTotal();
+    const amountInPaise = Math.round(totalAmount * 100);
+
+    // Validate amount
+    if (!amountInPaise || amountInPaise <= 0) {
+      throw new Error(`Invalid amount: ₹${totalAmount}. Order total must be greater than 0.`);
+    }
+
+    console.log('💳 Razorpay Payment Details:', {
+      orderId: razorpayOrderId,
+      amount: amountInPaise,
+      amountINR: totalAmount
+    });
     
     const options = {
       description: "Payment for your order",
       image: amproLogo,
       currency: "INR",
-      key: process.env.RAZORPAY_KEY || "rzp_test_yE3jJN90A3ObCp",
-      amount: Math.round(calculateTotal() * 100),
+      key: process.env.RAZORPAY_KEY || "rzp_test_RhuQKq8G6AymUH",
+      amount: Number(amountInPaise), // Ensure it's a number
       name: "Ampro",
-      ...(razorpayOrderId && { order_id: razorpayOrderId }),
       prefill: {
-        name,
-        email,
-        contact: phone
+        name: name?.trim() || "Customer",
+        email: email?.trim() || "test@example.com",
+        contact: String(phone || "").replace(/\D/g, '').slice(-10) || "9876543210" // Use valid test number if empty
       },
       theme: { color: "#1EB1C5" }
     };
 
+    console.log('📋 Final Razorpay Options:', JSON.stringify(options, null, 2));
+
     try {
+      console.log('Opening Razorpay with options:', JSON.stringify(options, null, 2));
       const data = await RazorpayCheckout.open(options);
+      console.log('Razorpay response received:', JSON.stringify(data, null, 2));
+      
       if (!data?.razorpay_payment_id) {
+        console.error('Missing payment ID in response:', data);
         throw new Error("Payment failed - No payment ID received");
       }
+      
+      console.log('Payment successful with ID:', data.razorpay_payment_id);
       return data.razorpay_payment_id;
     } catch (error) {
-      throw new Error(error?.description || "Payment failed");
+      console.error('Payment error caught:', {
+        message: error?.message,
+        description: error?.description,
+        code: error?.code,
+        fullError: error
+      });
+      
+      // Parse error message if it's a JSON string
+      let errorMsg = error?.description || error?.message || "Payment failed";
+      try {
+        if (typeof errorMsg === 'string' && errorMsg.includes('error')) {
+          const parsed = JSON.parse(errorMsg);
+          if (parsed?.error?.description) {
+            errorMsg = parsed.error.description;
+          }
+        }
+      } catch (parseErr) {
+        // Keep original message if parsing fails
+      }
+      
+      throw new Error(errorMsg);
     }
   };
 
@@ -335,7 +375,7 @@ const placeOrder = async () => {
       shipping_address_po_code: pincode.trim(),
       contact_id: Number(user?.contact_id),
       total_amount: Number(calculateTotal()),
-      payment_method: "offline",
+      payment_method: "Razorpay",
       order_status: "pending",
     };
 
@@ -392,13 +432,92 @@ const placeOrder = async () => {
     console.log("STATUS:", err?.response?.status);
     console.log("DATA:", err?.response?.data);
     setLoading(false);
+    Alert.alert("Error", "Failed to add items to order. Please try again.");
     return;
+  }
+
+  /* ============================
+     3️⃣ PROCESS PAYMENT
+     ============================ */
+  let paymentId;
+  try {
+    console.log("💳 Processing Razorpay payment for order:", orderId);
+    paymentId = await handlePayment(orderId);
+    console.log("✅ Payment successful with ID:", paymentId);
+  } catch (err) {
+    console.log("❌ Payment FAILED");
+    console.log("ERROR:", err?.message);
+    setLoading(false);
+    
+    // Check if payment was cancelled
+    if (err?.message?.includes('cancelled')) {
+      Alert.alert("Payment Cancelled", "You cancelled the payment. Click 'Place Order' again to retry.");
+    } else if (err?.message?.includes('delay')) {
+      Alert.alert("Payment Delayed", "There was a delay in response. Please try again.");
+    } else {
+      Alert.alert("Payment Failed", err?.message || "Failed to process payment. Please try again.");
+    }
+    return;
+  }
+
+  /* ============================
+     4️⃣ UPDATE ORDER STATUS
+     ============================ */
+  try {
+    console.log("🔄 Updating order status with payment ID:", paymentId);
+    const updatePayload = {
+      order_id: Number(orderId),
+      payment_id: String(paymentId),
+      status: 'completed'
+    };
+
+    console.log("📤 Update payload:", JSON.stringify(updatePayload, null, 2));
+
+    const updateRes = await api.post('/orders/updateOrderPayment', updatePayload, {
+      headers: {
+        'Content-Type': 'application/json'
+      }
+    });
+
+    console.log("✅ Order status updated:", updateRes.data);
+
+    if (!updateRes?.data?.success && updateRes?.status !== 200) {
+      throw new Error('Failed to update order status');
+    }
+  } catch (err) {
+    console.log("⚠️ Order status update FAILED (non-blocking)");
+    console.log("STATUS:", err?.response?.status);
+    console.log("ERROR MESSAGE:", err?.message);
+    console.log("RESPONSE DATA:", err?.response?.data);
+    // Continue anyway - payment was successful
+  }
+
+  /* ============================
+     5️⃣ SEND CONFIRMATION EMAIL
+     ============================ */
+  try {
+    await api.post('/commonApi/sendUseremailApp', {
+      to: email.trim(),
+      subject: "Order Confirmed",
+      phone: phone.trim(),
+      names: name.trim(),
+      address: address1.trim(),
+      city: city.trim(),
+      TotalAmount: calculateTotal(),
+      code: pincode.trim()
+    });
+    console.log("✅ Confirmation email sent");
+  } catch (err) {
+    console.log("⚠️ Email sending failed (non-blocking)");
+    console.log("ERROR:", err?.message);
+    // Continue anyway - order was successful
   }
 
   /* ============================
      SUCCESS
      ============================ */
-  Alert.alert("Success", "Order placed successfully");
+  setLoading(false);
+  Alert.alert("Success", "Order placed successfully! Payment confirmed.");
   dispatch(clearCart(user));
   navigation.navigate("OrderSuccess");
 

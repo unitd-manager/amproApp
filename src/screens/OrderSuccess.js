@@ -11,7 +11,7 @@ const OrderSuccess = () => {
   useEffect(() => {
     const backHandler = BackHandler.addEventListener('hardwareBackPress', () => {
       if (isFocused) {
-        navigation.navigate('MainApp');
+        navigation.navigate('Home');
         return true;
       }
       return false;
@@ -45,7 +45,7 @@ const OrderSuccess = () => {
           </TouchableOpacity>
           <TouchableOpacity
             style={[styles.button, styles.homeButton]}
-            onPress={() => navigation.navigate('MainApp')}
+            onPress={() => navigation.navigate('Home')}
             activeOpacity={0.7}
           >
             <Text style={styles.buttonText}>Back to Home</Text>

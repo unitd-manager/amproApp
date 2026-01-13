@@ -189,11 +189,11 @@ const ShippingAddress = () => {
             </View>
           ))}
 
-          <TextInput
+          {/* <TextInput
             style={styles.input}
             value={newAddress.address_type}
             editable={false}
-          />
+          /> */}
 
           <View style={styles.editButtonWrapper}>
             <CurvedButton title={editMode ? 'Update Address' : 'Save Address'} onPress={handleSaveAddress} />

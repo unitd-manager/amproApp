@@ -555,6 +555,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 15,
     marginBottom: 20,
     fontFamily: 'Outfit-Regular',
+    color: '#000',
   },
   
   sectionHeader: {
@@ -563,10 +564,12 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     marginBottom: 10,
     fontFamily: 'Outfit-Regular',
+    color: '#000',
   },
   
   sectionTitle: {
     fontSize: 18,
+    color: '#000',
     //fontWeight: 'bold',
     fontFamily: 'Outfit-Regular',
   },
@@ -597,7 +600,7 @@ const styles = StyleSheet.create({
     backgroundColor: '#E6F8FA',
     borderRadius: 15,
   },
-  categoryText: { fontSize: 12, fontFamily: 'Outfit-Regular', },
+  categoryText: { fontSize: 12, color:'#000', fontFamily: 'Outfit-Regular', },
 
 rowBottom: {
   flexDirection: 'row',
@@ -609,6 +612,7 @@ rowBottom: {
 flashItem: {
   width: '48%',
   backgroundColor: '#fff',
+  color: '#000',
   borderRadius: 10,
   overflow: 'hidden',
   marginBottom: 15,

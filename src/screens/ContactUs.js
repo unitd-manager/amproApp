@@ -391,6 +391,7 @@ const styles = StyleSheet.create({
     shadowRadius: 5,
     elevation: 3,
     fontFamily: 'Outfit-Regular',
+    color: '#000'
   },
   label: {
     fontWeight: '600',

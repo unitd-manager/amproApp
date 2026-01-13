@@ -63,6 +63,18 @@ const OrderDetails = ({ navigation, route }) => {
       const totalAmount = calculateTotal();
       const amountInPaise = Math.round(parseFloat(totalAmount) * 100); // Convert to paise
 
+      // Validate amount
+      if (!amountInPaise || amountInPaise <= 0) {
+        console.error('Invalid amount for payment:', {
+          totalAmount,
+          amountInPaise,
+          orderItem: orderItem.length
+        });
+        Alert.alert('Error', 'Invalid order total. Please refresh and try again.');
+        setPaymentProcessing(false);
+        return;
+      }
+
       // Get user data from AuthContext first, then fall back to AsyncStorage
       let currentUserDetails = authUser || UserDetails;
       console.log('Current user from AuthContext:', authUser);
@@ -85,25 +97,54 @@ const OrderDetails = ({ navigation, route }) => {
 
       console.log('Final currentUserDetails to use:', currentUserDetails);
 
+      // Validate required fields
+      const email = currentUserDetails?.email?.trim() || 'test@example.com';
+      let contact = String(currentUserDetails?.phone || currentUserDetails?.contact || '').replace(/\D/g, '').slice(-10);
+      
+      // If contact is empty or all zeros, use a valid test number
+      if (!contact || contact === '' || contact.replace(/9/g, '') === '') {
+        contact = '9876543210'; // Valid test number instead of all 9s
+      }
+      
+      const name = currentUserDetails?.name?.trim() || 'Customer';
+
+      console.log('Razorpay Payment Details:', {
+        order_id: orderNo.order_id,
+        amount: amountInPaise,
+        email,
+        contact,
+        name
+      });
+
       const options = {
         description: `Payment for Order #${orderNo.order_id}`,
         image: 'https://i.imgur.com/3g7bs6o.png',
         currency: 'INR',
-        key: 'rzp_test_1DP5mmOlF5G5ag', // Replace with your Razorpay Test Key
-        amount: amountInPaise,
+        key: 'rzp_test_RhuQKq8G6AymUH',
+        amount: Number(amountInPaise), // Ensure it's a number
         name: 'AMPRO',
         prefill: {
-          email: currentUserDetails?.email || 'test@example.com',
-          contact: currentUserDetails?.phone || '9999999999',
-          name: currentUserDetails?.name || 'Customer',
+          email: email,
+          contact: contact,
+          name: name,
         },
         theme: { color: '#3498db' }
       };
 
+      console.log('📋 Final Razorpay Options:', JSON.stringify(options, null, 2));
+      console.log('⚠️ Opening Razorpay with test key. If this fails, verify the API key is active on Razorpay dashboard.');
+
       RazorpayCheckout.open(options)
         .then(async (data) => {
           // Handle successful payment
-          console.log('Payment successful:', data);
+          console.log('🎉 Payment successful:', JSON.stringify(data, null, 2));
+          
+          if (!data?.razorpay_payment_id) {
+            console.error('❌ No payment ID in response:', data);
+            throw new Error('No payment ID received from Razorpay');
+          }
+          
+          console.log('✅ Payment ID:', data.razorpay_payment_id);
           
           // Update order status to completed
           await updateOrderStatus('completed', data.razorpay_payment_id);
@@ -118,8 +159,58 @@ const OrderDetails = ({ navigation, route }) => {
           );
         })
         .catch((error) => {
-          console.log('Payment error:', error);
-          Alert.alert('Payment Failed', `Error: ${error.description || 'Unknown error occurred'}`);
+          console.error('❌ Payment error details:', {
+            message: error?.message,
+            description: error?.description,
+            code: error?.code,
+            fullError: JSON.stringify(error)
+          });
+          
+          // Try to parse nested error message
+          let errorMsg = error?.description || error?.message || 'Unknown error occurred';
+          let displayMsg = errorMsg;
+          
+          try {
+            // Check if error description is a JSON string
+            if (typeof errorMsg === 'string' && errorMsg.includes('error')) {
+              const parsed = JSON.parse(errorMsg);
+              if (parsed?.error?.description) {
+                displayMsg = parsed.error.description;
+              }
+            }
+          } catch (parseErr) {
+            // If parsing fails, use original message
+            displayMsg = errorMsg;
+          }
+
+          console.log('Display message:', displayMsg);
+          
+          // Check for specific error types
+          if (displayMsg.includes('cancelled')) {
+            Alert.alert(
+              'Payment Cancelled',
+              'You cancelled the payment. Click "Complete Order" again to retry.',
+              [{ text: 'OK' }]
+            );
+          } else if (displayMsg.includes('delay')) {
+            Alert.alert(
+              'Payment Delayed',
+              'There was a delay in response. Please try again.',
+              [{ text: 'OK' }]
+            );
+          } else if (displayMsg.includes('parsing error') || displayMsg.includes('Post payment')) {
+            Alert.alert(
+              'Payment Gateway Error',
+              'The payment gateway is having trouble processing your payment. This could be due to:\n\n• Invalid API Key\n• Network connectivity issue\n• Payment gateway maintenance\n\nPlease try again or contact support.',
+              [{ text: 'OK' }]
+            );
+          } else {
+            Alert.alert(
+              'Payment Failed',
+              `${displayMsg}\n\nPlease try again or contact support.`,
+              [{ text: 'OK' }]
+            );
+          }
         })
         .finally(() => {
           setPaymentProcessing(false);

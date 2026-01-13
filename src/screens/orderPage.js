@@ -318,7 +318,7 @@ const OrderPage = ({ navigation, theme, reduxLang, route }) => {
       description: 'Purchase Description',
       image: 'https://your-company.com/your_image.png',
       currency: 'INR',
-      key: "rzp_test_Cmcb2IrTMsQEYc", // Replace with your Razorpay test/live key
+      key: "rzp_test_RhuQKq8G6AymUH", // Razorpay test key - for testing only
       amount: amountInPaise, // Amount in currency subunits (e.g., 1000 for INR 10)
       name: 'United',
       prefill: {
