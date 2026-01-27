@@ -1,9 +1,9 @@
 import React, { useLayoutEffect, useState, useEffect, useContext } from 'react';
-import { SafeAreaView, StyleSheet, Text, View, ScrollView, ActivityIndicator, Image, Dimensions, TouchableOpacity, Alert } from 'react-native';
+import { SafeAreaView, StyleSheet, Text, View, ScrollView, ActivityIndicator, Image, Dimensions, TouchableOpacity, Alert, Modal } from 'react-native';
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import api from "../constants/api"; // ✅ axios instance
 import imageBase from '../constants/imageBase';
-import RazorpayCheckout from 'react-native-razorpay';
+import { StripeProvider, CardField, useStripe } from "@stripe/stripe-react-native";
 import { AuthContext } from '../context/AuthContext';
 
 // 🎨 Theme
@@ -47,27 +47,30 @@ const OrderStatus = ({ number, label, isSelected }) => (
   </View>
 );
 
-const OrderDetails = ({ navigation, route }) => {
-  const { orderNo } = route.params;
+const OrderDetailsInner = ({ navigation, route, orderNo }) => {
   const { user: authUser } = useContext(AuthContext);
+  const { confirmPayment } = useStripe();
   const [UserDetails, setUserDetails] = useState({});
   const [orderItem, setOrderItem] = useState([]);
   const [loading, setLoading] = useState(true);
   const [paymentProcessing, setPaymentProcessing] = useState(false);
+  const [showPaymentModal, setShowPaymentModal] = useState(false);
+  const [cardDetails, setCardDetails] = useState(null);
+  const [clientSecret, setClientSecret] = useState(null);
   const windowWidth = Dimensions.get('window').width;
 
-  // 🟢 Handle Razorpay Payment
-  const handleRazorpayPayment = async () => {
+  // 🟢 Handle Stripe Payment - Create Payment Intent
+  const handleStripePayment = async () => {
     try {
       setPaymentProcessing(true);
       const totalAmount = calculateTotal();
-      const amountInPaise = Math.round(parseFloat(totalAmount) * 100); // Convert to paise
+      const amountInCents = Math.round(parseFloat(totalAmount) * 100); // Convert to cents
 
       // Validate amount
-      if (!amountInPaise || amountInPaise <= 0) {
+      if (!amountInCents || amountInCents <= 0) {
         console.error('Invalid amount for payment:', {
           totalAmount,
-          amountInPaise,
+          amountInCents,
           orderItem: orderItem.length
         });
         Alert.alert('Error', 'Invalid order total. Please refresh and try again.');
@@ -99,129 +102,113 @@ const OrderDetails = ({ navigation, route }) => {
 
       // Validate required fields
       const email = currentUserDetails?.email?.trim() || 'test@example.com';
-      let contact = String(currentUserDetails?.phone || currentUserDetails?.contact || '').replace(/\D/g, '').slice(-10);
-      
-      // If contact is empty or all zeros, use a valid test number
-      if (!contact || contact === '' || contact.replace(/9/g, '') === '') {
-        contact = '9876543210'; // Valid test number instead of all 9s
-      }
-      
       const name = currentUserDetails?.name?.trim() || 'Customer';
 
-      console.log('Razorpay Payment Details:', {
+      console.log('Stripe Payment Details:', {
         order_id: orderNo.order_id,
-        amount: amountInPaise,
+        amount: amountInCents,
         email,
-        contact,
         name
       });
 
-      const options = {
+      // Create payment intent on backend
+      const paymentIntentResponse = await api.post('/note/create-payment-intent', {
+        amount: amountInCents,
+        order_id: orderNo.order_id,
+        currency: 'usd',
         description: `Payment for Order #${orderNo.order_id}`,
-        image: 'https://i.imgur.com/3g7bs6o.png',
-        currency: 'INR',
-        key: 'rzp_test_RhuQKq8G6AymUH',
-        amount: Number(amountInPaise), // Ensure it's a number
-        name: 'AMPRO',
-        prefill: {
-          email: email,
-          contact: contact,
-          name: name,
-        },
-        theme: { color: '#3498db' }
-      };
+        customer_email: email,
+        customer_name: name
+      });
 
-      console.log('📋 Final Razorpay Options:', JSON.stringify(options, null, 2));
-      console.log('⚠️ Opening Razorpay with test key. If this fails, verify the API key is active on Razorpay dashboard.');
+      const secret = paymentIntentResponse.data.clientSecret;
 
-      RazorpayCheckout.open(options)
-        .then(async (data) => {
-          // Handle successful payment
-          console.log('🎉 Payment successful:', JSON.stringify(data, null, 2));
-          
-          if (!data?.razorpay_payment_id) {
-            console.error('❌ No payment ID in response:', data);
-            throw new Error('No payment ID received from Razorpay');
-          }
-          
-          console.log('✅ Payment ID:', data.razorpay_payment_id);
-          
-          // Update order status to completed
-          await updateOrderStatus('completed', data.razorpay_payment_id);
-          
-          // Send confirmation emails to user and admin with current user details
-          await sendConfirmationEmails(data.razorpay_payment_id, currentUserDetails);
-          
-          Alert.alert(
-            'Payment Successful',
-            `Payment ID: ${data.razorpay_payment_id}\n\nYour order has been confirmed. A confirmation email has been sent to you.`,
-            [{ text: 'OK', onPress: () => navigation.goBack() }]
-          );
-        })
-        .catch((error) => {
-          console.error('❌ Payment error details:', {
-            message: error?.message,
-            description: error?.description,
-            code: error?.code,
-            fullError: JSON.stringify(error)
-          });
-          
-          // Try to parse nested error message
-          let errorMsg = error?.description || error?.message || 'Unknown error occurred';
-          let displayMsg = errorMsg;
-          
-          try {
-            // Check if error description is a JSON string
-            if (typeof errorMsg === 'string' && errorMsg.includes('error')) {
-              const parsed = JSON.parse(errorMsg);
-              if (parsed?.error?.description) {
-                displayMsg = parsed.error.description;
-              }
-            }
-          } catch (parseErr) {
-            // If parsing fails, use original message
-            displayMsg = errorMsg;
-          }
+      if (!secret) {
+        throw new Error('Failed to create payment intent');
+      }
 
-          console.log('Display message:', displayMsg);
-          
-          // Check for specific error types
-          if (displayMsg.includes('cancelled')) {
-            Alert.alert(
-              'Payment Cancelled',
-              'You cancelled the payment. Click "Complete Order" again to retry.',
-              [{ text: 'OK' }]
-            );
-          } else if (displayMsg.includes('delay')) {
-            Alert.alert(
-              'Payment Delayed',
-              'There was a delay in response. Please try again.',
-              [{ text: 'OK' }]
-            );
-          } else if (displayMsg.includes('parsing error') || displayMsg.includes('Post payment')) {
-            Alert.alert(
-              'Payment Gateway Error',
-              'The payment gateway is having trouble processing your payment. This could be due to:\n\n• Invalid API Key\n• Network connectivity issue\n• Payment gateway maintenance\n\nPlease try again or contact support.',
-              [{ text: 'OK' }]
-            );
-          } else {
-            Alert.alert(
-              'Payment Failed',
-              `${displayMsg}\n\nPlease try again or contact support.`,
-              [{ text: 'OK' }]
-            );
-          }
-        })
-        .finally(() => {
-          setPaymentProcessing(false);
-        });
-    } catch (error) {
-      console.error('Payment error:', error);
+      console.log('✅ Payment intent created with client secret');
+      setClientSecret(secret);
+      setShowPaymentModal(true);
       setPaymentProcessing(false);
-      Alert.alert('Error', 'Failed to process payment');
+
+    } catch (error) {
+      console.error('❌ Payment error details:', {
+        message: error?.message,
+        response: error?.response?.data,
+        fullError: JSON.stringify(error)
+      });
+      
+      let errorMsg = error?.response?.data?.message || error?.message || 'Unknown error occurred';
+      
+      Alert.alert(
+        'Payment Failed',
+        `${errorMsg}\n\nPlease try again or contact support.`,
+        [{ text: 'OK' }]
+      );
+      setPaymentProcessing(false);
     }
   };
 
+  // 🟢 Process Payment with Card Details
+  const processPaymentWithCard = async () => {
+    try {
+      if (!cardDetails?.complete) {
+        Alert.alert('Error', 'Please enter complete card details');
+        return;
+      }
+
+      if (!clientSecret) {
+        Alert.alert('Error', 'Payment intent not created. Please try again.');
+        return;
+      }
+
+      setPaymentProcessing(true);
+      console.log('Processing payment with card...');
+
+      // Confirm payment using the card details
+      const { paymentIntent, error } = await confirmPayment(clientSecret, {
+        paymentMethodType: 'Card',
+      });
+
+      if (error) {
+        console.error('❌ Payment confirmation failed:', error);
+        Alert.alert('Payment Failed', error.message || 'Failed to process card payment');
+        setPaymentProcessing(false);
+        return;
+      }
+
+      if (paymentIntent?.status === 'Succeeded') {
+        console.log('✅ Payment successful:', paymentIntent.id);
+
+        // Update order status to completed
+        await updateOrderStatus('completed', paymentIntent.id);
+
+        // Send confirmation emails
+        let currentUserDetails = authUser || UserDetails;
+        await sendConfirmationEmails(paymentIntent.id, currentUserDetails);
+
+        setShowPaymentModal(false);
+        setPaymentProcessing(false);
+
+        Alert.alert(
+          'Payment Successful',
+          `Payment ID: ${paymentIntent.id}\n\nYour order has been confirmed. A confirmation email has been sent to you.`,
+          [{ text: 'OK', onPress: () => navigation.goBack() }]
+        );
+      } else {
+        console.log('Payment status:', paymentIntent?.status);
+        Alert.alert('Info', `Payment status: ${paymentIntent?.status}`);
+        setPaymentProcessing(false);
+      }
+
+    } catch (error) {
+      console.error('❌ Payment processing error:', error);
+      Alert.alert('Error', error?.message || 'Failed to process payment');
+      setPaymentProcessing(false);
+    }
+  };
+          
   // 🟢 Send Confirmation Emails
   const sendConfirmationEmails = async (paymentId, userDetails = null) => {
     try {
@@ -331,8 +318,8 @@ const OrderDetails = ({ navigation, route }) => {
           style: 'cancel',
         },
         {
-          text: 'Pay with Razorpay',
-          onPress: handleRazorpayPayment,
+          text: 'Pay with Stripe',
+          onPress: handleStripePayment,
         },
         {
           text: 'Cash on Delivery',
@@ -544,12 +531,96 @@ const OrderDetails = ({ navigation, route }) => {
             )}
           </TouchableOpacity>
         )}
+
+        {/* Payment Modal */}
+        {showPaymentModal && (
+          <Modal
+            animationType="slide"
+            transparent={true}
+            visible={showPaymentModal}
+            onRequestClose={() => {
+              setShowPaymentModal(false);
+              setClientSecret(null);
+              setCardDetails(null);
+            }}
+          >
+            <View style={styles.modalOverlay}>
+              <View style={styles.modalContent}>
+                <Text style={styles.modalTitle}>Enter Card Details</Text>
+                
+                {/* Card Input */}
+                <CardField
+                  postalCodeEnabled={false}
+                  placeholder={{
+                    number: '4242 4242 4242 4242',
+                    expiration: '12/25',
+                    cvc: '123',
+                  }}
+                  cardStyle={styles.cardField}
+                  style={styles.cardFieldContainer}
+                  onCardChange={(cardDetails) => {
+                    console.log('Card details changed:', cardDetails);
+                    setCardDetails(cardDetails);
+                  }}
+                />
+
+                <Text style={styles.amountText}>Amount: ₹{calculateTotal()}</Text>
+
+                {/* Modal Buttons */}
+                <View style={styles.modalButtonsContainer}>
+                  <TouchableOpacity
+                    style={[styles.modalButton, styles.cancelButton]}
+                    onPress={() => {
+                      setShowPaymentModal(false);
+                      setClientSecret(null);
+                      setCardDetails(null);
+                    }}
+                    disabled={paymentProcessing}
+                  >
+                    <Text style={styles.cancelButtonText}>Cancel</Text>
+                  </TouchableOpacity>
+
+                  <TouchableOpacity
+                    style={[
+                      styles.modalButton,
+                      styles.payButton,
+                      (!cardDetails?.complete || paymentProcessing) && styles.payButtonDisabled
+                    ]}
+                    onPress={processPaymentWithCard}
+                    disabled={!cardDetails?.complete || paymentProcessing}
+                  >
+                    {paymentProcessing ? (
+                      <ActivityIndicator size="small" color="#fff" />
+                    ) : (
+                      <Text style={styles.payButtonText}>Pay Now</Text>
+                    )}
+                  </TouchableOpacity>
+                </View>
+
+                <Text style={styles.testCardNote}>
+                  Test Card: 4242 4242 4242 4242 (Any future date & any 3-digit CVC)
+                </Text>
+              </View>
+            </View>
+          </Modal>
+        )}
       </ScrollView>
     </SafeAreaView>
   );
 };
 
-export default OrderDetails;
+// Wrapper component with Stripe Provider
+const OrderDetailsScreen = ({ navigation, route }) => {
+  const STRIPE_PUBLIC_KEY = "pk_test_51SsQL3PZE5qSvArDSfmCI2XrcGcxlhkSl2BjYJOUqUODwbGPsrtbpWaIhwsqwaaA7886QCTtEOFb38cQruMQPily00PEXleFIN";
+  
+  return (
+    <StripeProvider publishableKey={STRIPE_PUBLIC_KEY}>
+      <OrderDetailsInner navigation={navigation} route={route} orderNo={route.params?.orderNo} />
+    </StripeProvider>
+  );
+};
+
+export default OrderDetailsScreen;
 
 const styles = StyleSheet.create({
   container: { flex: 1 },
@@ -618,5 +689,92 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontFamily: 'Outfit-Regular',
     fontWeight: '600',
+  },
+  // 🟢 Payment Modal Styles
+  modalOverlay: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    backgroundColor: 'rgba(0, 0, 0, 0.5)',
+    justifyContent: 'flex-end',
+    zIndex: 1000,
+  },
+  modalContent: {
+    backgroundColor: '#fff',
+    borderTopLeftRadius: 20,
+    borderTopRightRadius: 20,
+    padding: 20,
+    paddingBottom: 30,
+    maxHeight: '80%',
+  },
+  modalTitle: {
+    fontSize: 20,
+    fontWeight: '600',
+    color: '#333',
+    marginBottom: 16,
+    textAlign: 'center',
+    fontFamily: 'Outfit-Regular',
+  },
+  cardFieldContainer: {
+    height: 60,
+    marginBottom: 16,
+    borderRadius: 8,
+    overflow: 'hidden',
+  },
+  cardField: {
+    backgroundColor: '#f5f5f5',
+    textColor: '#333333',
+  },
+  amountText: {
+    fontSize: 18,
+    fontWeight: '600',
+    color: '#333',
+    textAlign: 'center',
+    marginBottom: 16,
+    fontFamily: 'Outfit-Regular',
+  },
+  modalButtonsContainer: {
+    flexDirection: 'row',
+    gap: 12,
+    marginTop: 16,
+  },
+  modalButton: {
+    flex: 1,
+    paddingVertical: 12,
+    borderRadius: 8,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  cancelButton: {
+    backgroundColor: '#ecf0f1',
+  },
+  cancelButtonText: {
+    color: '#333',
+    fontSize: 16,
+    fontWeight: '600',
+    fontFamily: 'Outfit-Regular',
+  },
+  payButton: {
+    backgroundColor: '#27ae60',
+  },
+  payButtonDisabled: {
+    backgroundColor: '#95a5a6',
+    opacity: 0.6,
+  },
+  payButtonText: {
+    color: '#fff',
+    fontSize: 16,
+    fontWeight: '600',
+    fontFamily: 'Outfit-Regular',
+  },
+  testCardNote: {
+    fontSize: 12,
+    color: '#7f8c8d',
+    textAlign: 'center',
+    marginTop: 12,
+    fontStyle: 'italic',
+    fontFamily: 'Outfit-Regular',
   },
 });

@@ -10,13 +10,15 @@ import {
   Image,
   ActivityIndicator,
 } from "react-native";
-import RazorpayCheckout from "react-native-razorpay";
+import { StripeProvider, CardField, useStripe } from "@stripe/stripe-react-native";
 import { AuthContext } from "../context/AuthContext";
 import { useSelector, useDispatch } from 'react-redux';
 import { fetchCartItems, clearCart, deleteCartItem, updateCart } from '../redux/slices/cartSlice';
 import imageBase from "../constants/imageBase";
 import api from "../constants/api";
 import amproLogo from "../assets/images/amprologo.png";
+
+const STRIPE_PUBLIC_KEY = "pk_test_51SsQL3PZE5qSvArDSfmCI2XrcGcxlhkSl2BjYJOUqUODwbGPsrtbpWaIhwsqwaaA7886QCTtEOFb38cQruMQPily00PEXleFIN";
 
 const Checkout = ({navigation}) => {
   const dispatch = useDispatch();
@@ -78,72 +80,47 @@ const Checkout = ({navigation}) => {
   };
 
   const handlePayment = async (orderId) => {
-    //const razorpayOrderId = await createRazorpayOrder(calculateTotal(), orderId);
-    const razorpayOrderId = orderId;
     const totalAmount = calculateTotal();
-    const amountInPaise = Math.round(totalAmount * 100);
+    const amountInCents = Math.round(totalAmount * 100);
 
     // Validate amount
-    if (!amountInPaise || amountInPaise <= 0) {
+    if (!amountInCents || amountInCents <= 0) {
       throw new Error(`Invalid amount: ₹${totalAmount}. Order total must be greater than 0.`);
     }
 
-    console.log('💳 Razorpay Payment Details:', {
-      orderId: razorpayOrderId,
-      amount: amountInPaise,
+    console.log('💳 Stripe Payment Details:', {
+      orderId: orderId,
+      amount: amountInCents,
       amountINR: totalAmount
     });
-    
-    const options = {
-      description: "Payment for your order",
-      image: amproLogo,
-      currency: "INR",
-      key: process.env.RAZORPAY_KEY || "rzp_test_RhuQKq8G6AymUH",
-      amount: Number(amountInPaise), // Ensure it's a number
-      name: "Ampro",
-      prefill: {
-        name: name?.trim() || "Customer",
-        email: email?.trim() || "test@example.com",
-        contact: String(phone || "").replace(/\D/g, '').slice(-10) || "9876543210" // Use valid test number if empty
-      },
-      theme: { color: "#1EB1C5" }
-    };
-
-    console.log('📋 Final Razorpay Options:', JSON.stringify(options, null, 2));
 
     try {
-      console.log('Opening Razorpay with options:', JSON.stringify(options, null, 2));
-      const data = await RazorpayCheckout.open(options);
-      console.log('Razorpay response received:', JSON.stringify(data, null, 2));
+      console.log('Opening Stripe payment sheet');
       
-      if (!data?.razorpay_payment_id) {
-        console.error('Missing payment ID in response:', data);
-        throw new Error("Payment failed - No payment ID received");
+      // Create a payment intent on your backend
+      const paymentIntentResponse = await api.post('/note/create-payment-intent', {
+        amount: amountInCents,
+        order_id: orderId,
+        currency: 'inr',
+        description: `Payment for order ${orderId}`
+      });
+
+      const clientSecret = paymentIntentResponse.data.clientSecret;
+      
+      if (!clientSecret) {
+        throw new Error("Failed to create payment intent");
       }
-      
-      console.log('Payment successful with ID:', data.razorpay_payment_id);
-      return data.razorpay_payment_id;
+
+      console.log('Client secret received:', clientSecret);
+      return clientSecret;
     } catch (error) {
       console.error('Payment error caught:', {
         message: error?.message,
-        description: error?.description,
-        code: error?.code,
+        response: error?.response?.data,
         fullError: error
       });
       
-      // Parse error message if it's a JSON string
-      let errorMsg = error?.description || error?.message || "Payment failed";
-      try {
-        if (typeof errorMsg === 'string' && errorMsg.includes('error')) {
-          const parsed = JSON.parse(errorMsg);
-          if (parsed?.error?.description) {
-            errorMsg = parsed.error.description;
-          }
-        }
-      } catch (parseErr) {
-        // Keep original message if parsing fails
-      }
-      
+      let errorMsg = error?.response?.data?.message || error?.message || "Payment failed";
       throw new Error(errorMsg);
     }
   };
@@ -375,7 +352,7 @@ const placeOrder = async () => {
       shipping_address_po_code: pincode.trim(),
       contact_id: Number(user?.contact_id),
       total_amount: Number(calculateTotal()),
-      payment_method: "Razorpay",
+      payment_method: "Stripe",
       order_status: "pending",
     };
 
@@ -441,9 +418,9 @@ const placeOrder = async () => {
      ============================ */
   let paymentId;
   try {
-    console.log("💳 Processing Razorpay payment for order:", orderId);
+    console.log("💳 Processing Stripe payment for order:", orderId);
     paymentId = await handlePayment(orderId);
-    console.log("✅ Payment successful with ID:", paymentId);
+    console.log("✅ Payment successful with Client Secret:", paymentId);
   } catch (err) {
     console.log("❌ Payment FAILED");
     console.log("ERROR:", err?.message);

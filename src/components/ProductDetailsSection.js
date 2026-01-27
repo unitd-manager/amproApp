@@ -66,11 +66,13 @@ const styles = StyleSheet.create({
     paddingBottom: 16,
     paddingTop: 0, // Remove top spacing
     fontFamily: 'Outfit-Regular',
+    color: '#000',
   },
   titleRow: {
     paddingVertical: 0, // Remove top space from Product Detail Label
     marginBottom: 8,
     fontFamily: 'Outfit-Regular',
+    color: '#000',
   },
   row: {
     flexDirection: 'row',
@@ -80,11 +82,13 @@ const styles = StyleSheet.create({
     borderBottomWidth: 1,
     borderBottomColor: '#ddd',
      fontFamily: 'Outfit-Regular',
+     color: '#000',
   },
   title: {
     fontSize: 18,
     // fontWeight: 'bold',
      fontFamily: 'Outfit-Regular',
+     color: '#000',
   },
   icon: {
     width: 20,
@@ -93,6 +97,7 @@ const styles = StyleSheet.create({
   content: {
     paddingVertical: 8,
      fontFamily: 'Outfit-Regular',
+     color: '#000',
   },
   text: {
     fontSize: 14,

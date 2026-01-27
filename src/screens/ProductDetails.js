@@ -14,6 +14,7 @@ import api from "../constants/api";
 import { addToCart, fetchCartItems } from '../redux/slices/cartSlice';
 import { addToWishlist,fetchWishlistItems,deleteWishlistItem } from "../redux/slices/wishlistSlice";
 import imageBase from "../constants/imageBase";
+import noImage from "../assets/images/no-image.jpg";
 import { useDispatch, useSelector } from "react-redux";
 import { useFocusEffect } from '@react-navigation/native';
 import AsyncStorage from "@react-native-async-storage/async-storage";

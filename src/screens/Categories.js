@@ -2,6 +2,7 @@ import React,{useState,useEffect, useLayoutEffect} from 'react';
 import { View, Text, ScrollView, Image, StyleSheet, TouchableOpacity } from 'react-native';
 import api from '../constants/api';
 import imagebaseurl from '../constants/imageBase';
+import noImage from '../assets/images/no-image.jpg';
 
 const Categories = ({navigation}) => {
 	const[categoryData,setCategoryData]=useState([]);
@@ -101,15 +102,10 @@ const Categories = ({navigation}) => {
                 }}
               >
             <Image
-  source={{
-    uri: item.images[0]
-      ? `${imagebaseurl}${item.images[0]}`
-      : `${imagebaseurl}placeholder.png`,
-  }}
+  source={item.images[0] && item.images[0] !== 'null' ? { uri: `${imagebaseurl}${item.images[0]}` } : noImage}
   style={styles.image}
   onError={() => {
-    // Fallback to another base URL if first fails
-    item.images[0] = 'http://amproadmin.zaitunsoftsolutions.com/storage/uploads/' + item.images[0];
+    // Fallback to local no-image.jpg
   }}
 />
 

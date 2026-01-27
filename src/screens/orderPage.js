@@ -18,7 +18,7 @@ import api from "../constants/api";
 import { HEIGHT } from "../components/config";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import imageBase from "../constants/imageBase";
-import RazorpayCheckout from 'react-native-razorpay';
+import { StripeProvider } from '@stripe/stripe-react-native';
 
 const OrderPage = ({ navigation, theme, reduxLang, route }) => {
   /////////////////// Header Settings
@@ -51,9 +51,9 @@ const OrderPage = ({ navigation, theme, reduxLang, route }) => {
   const [paymentMethods, setpaymentMethods] = useState([
     // { value: reduxLang.Stripe, status: false, index: 0 },
     // { value: reduxLang.Paypal, status: true, index: 1 },
-    { value: reduxLang.Razorpay,method:reduxLang.CashOnDelivery,status: true, index: 2 },
+    { value: reduxLang.Stripe,method:reduxLang.CashOnDelivery,status: true, index: 2 },
     // { value: reduxLang.Visa, status: true, index: 3 },
-    { value: reduxLang.CashOnDelivery,method:reduxLang.Razorpay,status: true, index: 4 },
+    { value: reduxLang.CashOnDelivery,method:reduxLang.Stripe,status: true, index: 4 },
   ]);
 
   let [cardData] = useState([
@@ -311,29 +311,30 @@ const OrderPage = ({ navigation, theme, reduxLang, route }) => {
   }, [datas]);
 
   const onPaymentPress = async () => {
-
-    const amountInPaise = total * 100;
-    console.log('amountInPaise',amountInPaise)
-    const options = {
-      description: 'Purchase Description',
-      image: 'https://your-company.com/your_image.png',
-      currency: 'INR',
-      key: "rzp_test_RhuQKq8G6AymUH", // Razorpay test key - for testing only
-      amount: amountInPaise, // Amount in currency subunits (e.g., 1000 for INR 10)
-      name: 'United',
-      prefill: {
-        email:UserDetails.email,
-        contact: UserDetails.mobile,
-        name: UserDetails.first_name,
-      },
-      theme: { color: '#532C6D' },
-    };
-
+    const amountInCents = total * 100;
+    console.log('amountInCents',amountInCents)
+    
     try {
-      const data = await RazorpayCheckout.open(options);
-      console.log('Payment Successful:', data);
+      // Create payment intent on backend
+      const paymentIntentResponse = await api.post('/note/create-payment-intent', {
+        amount: amountInCents,
+        currency: 'usd',
+        description: 'Purchase from Order Page',
+        customer_email: UserDetails.email,
+        customer_name: UserDetails.first_name
+      });
+
+      const clientSecret = paymentIntentResponse.data.clientSecret;
+
+      if (!clientSecret) {
+        throw new Error('Failed to create payment intent');
+      }
+
+      console.log('✅ Payment intent created:', clientSecret);
+      Alert.alert('Payment', 'Payment intent created successfully. Proceed with payment.');
     } catch (error) {
       console.error('Error:', error);
+      Alert.alert('Payment Error', error?.message || 'Failed to initiate payment');
     }
   };
 

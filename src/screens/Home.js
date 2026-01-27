@@ -4,6 +4,7 @@ import BannerCarousel from '../components/BannerCarousel';
 import { useNavigation,useFocusEffect } from '@react-navigation/native';
 import api from '../constants/api';
 import imageBase from '../constants/imageBase';
+import noImage from '../assets/images/no-image.jpg';
 import { useSelector, useDispatch } from 'react-redux';
 import { addToCart, fetchCartItems } from '../redux/slices/cartSlice';
 import AsyncStorage from '@react-native-async-storage/async-storage';
@@ -264,7 +265,7 @@ const { wishitems, status } = useSelector((state) => state.wishlist);
             
             <View style={styles.categoryItem}>
                <TouchableOpacity onPress={() => navigation.navigate('ProductList',{categoryId: item.category_id,categoryName:item.category_title})}>
-              <Image source={{ uri:  `${imageBase}${item.images[0]}`}} style={styles.categoryIcon} />
+              <Image source={item.images[0] && item.images[0] !== 'null' ? { uri:  `${imageBase}${item.images[0]}`} : noImage} style={styles.categoryIcon} />
               <Text style={styles.categoryText}>{item.category_title}</Text>
               </TouchableOpacity>
             </View>
@@ -298,7 +299,7 @@ const { wishitems, status } = useSelector((state) => state.wishlist);
       <Text style={styles.discountText}>{item.discount} OFF</Text>
     </View> */}
     <Image
-      source={{ uri: `${imageBase}${item.images[0]}` }}
+      source={item.images[0] && item.images[0] !== 'null' ? { uri: `${imageBase}${item.images[0]}` } : noImage}
       style={styles.flashImage}
     />
   </View>
@@ -366,7 +367,7 @@ const { wishitems, status } = useSelector((state) => state.wishlist);
       <Text style={styles.discountText}>{item.discount} OFF</Text>
     </View> */}
     <Image
-      source={{ uri: `${imageBase}${item.images[0]}` }}
+      source={item.images[0] && item.images[0] !== 'null' ? { uri: `${imageBase}${item.images[0]}` } : noImage}
       style={styles.flashImage}
     />
   </View>
@@ -434,7 +435,7 @@ const { wishitems, status } = useSelector((state) => state.wishlist);
       <Text style={styles.discountText}>{item.discount} OFF</Text>
     </View> */}
     <Image
-      source={{ uri: `${imageBase}${item.images[0]}` }}
+      source={item.images[0] && item.images[0] !== 'null' ? { uri: `${imageBase}${item.images[0]}` } : noImage}
       style={styles.flashImage}
     />
   </View>
@@ -502,7 +503,7 @@ const { wishitems, status } = useSelector((state) => state.wishlist);
       <Text style={styles.discountText}>{item.discount} OFF</Text>
     </View> */}
     <Image
-      source={{ uri: `${imageBase}${item.images[0]}` }}
+      source={item.images[0] && item.images[0] !== 'null' ? { uri: `${imageBase}${item.images[0]}` } : noImage}
       style={styles.flashImage}
     />
   </View>
@@ -595,7 +596,7 @@ const styles = StyleSheet.create({
   categoryItem: { alignItems: 'center', marginRight: 20 },
   categoryIcon: {
     width: 60,
-    height: 60,
+    height: 100,
     marginBottom: 5,
     backgroundColor: '#E6F8FA',
     borderRadius: 15,

@@ -3,6 +3,7 @@ import { View, Image, FlatList, TouchableOpacity, StyleSheet, Dimensions } from 
 import Swiper from 'react-native-swiper';
 import ImageViewing from "react-native-image-viewing";
 import imageBase from "../constants/imageBase";
+import noImage from "../assets/images/no-image.jpg";
 
 const { width } = Dimensions.get("window");
 
@@ -55,11 +56,7 @@ const ProductImageGallery = ({ images = [] }) => {
             <View key={index} style={styles.slideContainer}>
               <TouchableOpacity onPress={() => setIsViewerVisible(true)}>
                 <Image
-                  source={{ 
-                    uri: image
-                      ? imageBase + image
-                      : "https://storage.googleapis.com/tagjs-prod.appspot.com/pNd58t8xI9/yp2hw732.png"
-                  }}
+                  source={image && image !== 'null' ? { uri: imageBase + image } : noImage}
                   style={styles.mainImage}
                   resizeMode="contain"
                 />
@@ -81,11 +78,7 @@ const ProductImageGallery = ({ images = [] }) => {
           renderItem={({ item, index }) => (
             <TouchableOpacity onPress={() => onThumbnailPress(index)}>
               <Image
-                source={{
-                  uri: item
-                    ? imageBase + item
-                    : "https://storage.googleapis.com/tagjs-prod.appspot.com/pNd58t8xI9/yp2hw732.png"
-                }}
+                source={item && item !== 'null' ? { uri: imageBase + item } : noImage}
                 style={[
                   styles.thumbnail,
                   selectedImageIndex === index && styles.selectedThumbnail,

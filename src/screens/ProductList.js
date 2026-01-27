@@ -13,6 +13,7 @@ import {
 import Ionicons from 'react-native-vector-icons/Ionicons';
 import api from '../constants/api';
 import imageBase from '../constants/imageBase';
+import noImage from '../assets/images/no-image.jpg';
 import { useSelector, useDispatch } from 'react-redux';
 import { addToCart, fetchCartItems,updateCart } from '../redux/slices/cartSlice';
 import AsyncStorage from '@react-native-async-storage/async-storage';
@@ -369,7 +370,7 @@ useEffect(()=>{
       >
         <View style={styles.imageContainer}>
           <Image
-            source={{ uri: `${imageBase}${item.images[0]}` }}
+            source={item.images[0] && item.images[0] !== 'null' ? { uri: `${imageBase}${item.images[0]}` } : noImage}
             style={styles.image}
           />
           {item.discount > 0 && (
@@ -572,6 +573,7 @@ const styles = StyleSheet.create({
     marginHorizontal: 10,
     marginTop: 10,
     fontFamily: 'Outfit-Regular',
+    color:'#000'
   },
   headerText: {
     flexDirection: 'row',
@@ -579,6 +581,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     fontSize: 18,
     fontFamily: 'Outfit-Regular',
+    color:'#000'
   },
   searchBar: {
     marginHorizontal: 10,
@@ -596,6 +599,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 10,
     paddingTop: 10,
     fontFamily: 'Outfit-Regular',
+    color:'#000'
   },
   card: {
     width: '48%',
@@ -625,6 +629,7 @@ const styles = StyleSheet.create({
     fontFamily: 'Outfit-Regular',
     fontSize: 14,
     paddingHorizontal: 8,
+    color: '#000',
   },
   
   addToCart: {
@@ -709,6 +714,7 @@ const styles = StyleSheet.create({
   chipText: {
     fontFamily: 'Outfit-Regular',
     fontSize: 14,
+    color: '#000',
   },
   
 });
