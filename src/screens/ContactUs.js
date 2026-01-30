@@ -27,6 +27,7 @@ const ContactUs = () => {
   });
 
   const [errors, setErrors] = useState({});
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   const handleChange = (key, value) => {
     setUser(prev => ({ ...prev, [key]: value }));
@@ -149,6 +150,9 @@ const handleSearch = text => {
       [
         {
           text: 'No',
+          onPress: () => {
+            setIsSubmitting(false);
+          },
           style: 'cancel',
         },
         {
@@ -171,9 +175,11 @@ const handleSearch = text => {
                   contactNo: '',
                   comments: '',
                 });
+                setIsSubmitting(false);
               })
               .catch((err) => {
                 Alert.alert("Error", "Enquiry submission failed!");
+                setIsSubmitting(false);
               });
           },
         },
@@ -193,6 +199,7 @@ const handleSearch = text => {
 
   const handleSubmit = () => {
     if (validateFields()) {
+      setIsSubmitting(true);
       generateCode();
     }
   };
@@ -209,7 +216,7 @@ const handleSearch = text => {
 
   return (
     <ScrollView contentContainerStyle={styles.container}>
-      <Text style={styles.heading}>Contact Us</Text>
+      <Text style={[styles.heading, { color: '#000' }]}>Contact Us</Text>
 
       <View style={styles.form}>
         <CustomInput
@@ -236,13 +243,13 @@ const handleSearch = text => {
       style={styles.countryCodeBtn}
       onPress={() => setShowPicker(true)}
     >
-      <Text style={styles.codeText}>
+      <Text style={[styles.codeText, { color: '#000' }]}>
         {user.mobile_country_code || '+91'}
       </Text>
     </TouchableOpacity>
 
     <TextInput
-      style={styles.input}
+      style={[styles.input, { color: '#000' }]}
       placeholder="Contact No"
       keyboardType="phone-pad"
       value={user.contactNo}
@@ -271,42 +278,43 @@ const handleSearch = text => {
           multiline
           numberOfLines={4}
           error={errors.comments}
-          style={{ height: 100 }}
+          style={{ height: 100,color: '#000' }}
         />
 
         <Button
           mode="contained"
           onPress={handleSubmit}
+          disabled={isSubmitting}
           style={styles.button}
         >
-          Submit
+          {isSubmitting ? 'Submitting...' : 'Submit'}
         </Button>
       </View>
 
       <View style={styles.infoBox}>
       <View style={styles.row}>
         <Icon name="phone" size={20} color="#000" />
-        <Text style={styles.label}> Phone:</Text>
+        <Text style={[styles.label, { color: '#000' }]}> Phone:</Text>
       </View>
-      <Text style={styles.info}>{contact && contact.mobile}</Text>
+      <Text style={[styles.info, { color: '#000' }]}>{contact && contact.mobile}</Text>
 
       <View style={styles.row}>
         <Icon name="envelope" size={20} color="#000" />
-        <Text style={styles.label}> Email:</Text>
+        <Text style={[styles.label, { color: '#000' }]}> Email:</Text>
       </View>
-      <Text style={styles.info}>{email && email.mailId}</Text>
+      <Text style={[styles.info, { color: '#000' }]}>{email && email.mailId}</Text>
 
       <View style={styles.row}>
         <Icon name="globe" size={20} color="#000" />
-        <Text style={styles.label}> Website:</Text>
+        <Text style={[styles.label, { color: '#000' }]}> Website:</Text>
       </View>
-      <Text style={styles.info}>{website && website.web}</Text>
+      <Text style={[styles.info, { color: '#000' }]}>{website && website.web}</Text>
 
       <View style={styles.row}>
         <Icon name="map-marker" size={20} color="#000" />
-        <Text style={styles.label}> Address:</Text>
+        <Text style={[styles.label, { color: '#000' }]}> Address:</Text>
       </View>
-      <Text style={styles.info}>
+      <Text style={[styles.info, { color: '#000' }]}>
         {address && address.addr}
       </Text>
     </View>
@@ -323,6 +331,7 @@ const CustomInput = ({ placeholder, value, onChangeText, error, style, ...rest }
       <TextInput
         style={[
           styles.input,
+          { color: '#000' },
           style,
           error && { borderColor: 'red' }
         ]}
@@ -355,6 +364,7 @@ const styles = StyleSheet.create({
     padding: 20,
     borderRadius: 10,
     elevation: 3,
+    color: '#000'
   },
   input: {
     backgroundColor: '#f9f9f9',
@@ -450,7 +460,8 @@ const styles = StyleSheet.create({
     marginRight: 12
   },
   countryText: {
-    fontSize: 14
+    fontSize: 14,
+    color: '#000',
   }
 
 });

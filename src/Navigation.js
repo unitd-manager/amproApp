@@ -206,7 +206,7 @@ const Navigation = () => {
 
   return (
     <Stack.Navigator
-      initialRouteName={isLoggedIn ? "MainApp" : "LoginPage"}
+      initialRouteName={isLoggedIn ? "MainApp" : "Home"}
       screenOptions={{
         headerTitleStyle: {
           fontFamily: 'Outfit-Regular',

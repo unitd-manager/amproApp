@@ -494,7 +494,7 @@ const placeOrder = async () => {
      SUCCESS
      ============================ */
   setLoading(false);
-  Alert.alert("Success", "Order placed successfully! Payment confirmed.");
+  Alert.alert("Success", "Order placed successfully!");
   dispatch(clearCart(user));
   navigation.navigate("OrderSuccess");
 
