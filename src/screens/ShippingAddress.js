@@ -124,10 +124,10 @@ const ShippingAddress = () => {
         renderItem={({ item }) => (
           <View style={styles.card}>
             <View style={styles.cardHeader}>
-              <View style={{ flex: 1 }}>
+              <View style={{ flex: 1,color:'#000' }}>
                 <Text style={styles.cardTitle}>{item.shipper_name}</Text>
-                <Text>{item.address_flat}, {item.address_street}, {item.address_town}</Text>
-                <Text>{item.address_state}, {item.address_country} {item.address_po_code}</Text>
+                <Text style={styles.cardDesc}>{item.address_flat}, {item.address_street}, {item.address_town}</Text>
+                <Text style={styles.cardDesc}>{item.address_state}, {item.address_country} {item.address_po_code}</Text>
               </View>
 
               {/* Icons on right side */}
@@ -211,16 +211,18 @@ export default ShippingAddress;
 
 const styles = StyleSheet.create({
   container: { padding: 20, flex: 1, fontFamily: 'Outfit-Regular' },
-  title: { fontSize: 22, fontWeight: 'bold', textAlign: 'center', marginBottom: 20, fontFamily: 'Outfit-Regular' },
+  title: { fontSize: 22, fontWeight: 'bold', textAlign: 'center', marginBottom: 20, fontFamily: 'Outfit-Regular', color:'#000' },
   card: { borderBottomWidth:0.3, backgroundColor: '#f0f0f0', padding: 15, borderRadius: 8, marginBottom: 15, fontFamily: 'Outfit-Regular' },
   cardHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
-  cardTitle: { fontWeight: 'bold', fontSize: 16, fontFamily: 'Outfit-Regular' },
+  cardTitle: { fontWeight: 'bold', fontSize: 16, fontFamily: 'Outfit-Regular',color:'#000' },
+  cardDesc: { fontSize: 14, fontFamily: 'Outfit-Regular',color:'#000' },
+  
   iconRow: { flexDirection: 'row', alignItems: 'center' },
   iconButton: { marginLeft: 12 },
   modalContent: { padding: 20, fontFamily: 'Outfit-Regular' },
   modalTitle: { fontSize: 18, fontWeight: 'bold', marginBottom: 15, fontFamily: 'Outfit-Regular' },
   inputGroup: { marginBottom: 10, fontFamily: 'Outfit-Regular' },
-  input: { borderWidth: 1, borderColor: '#ccc', borderRadius: 5, padding: 10, fontFamily: 'Outfit-Regular' },
+  input: { borderWidth: 1, borderColor: '#ccc',color:'#000', borderRadius: 5, padding: 10, fontFamily: 'Outfit-Regular' },
   errorText: { color: 'red', fontSize: 12, fontFamily: 'Outfit-Regular' },
   customButton: {
     backgroundColor: '#00B4D8',
@@ -230,6 +232,8 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     marginVertical: 5,
     fontFamily: 'Outfit-Regular',
+    color:'#000',
+
   },
   customButtonText: { color: '#fff', fontFamily: 'Outfit-Regular' },
   inputLabel: { fontSize: 14, marginBottom: 5, fontFamily: 'Outfit-Regular' },

@@ -51,15 +51,15 @@ const SignUpScreen = ({ navigation }) => {
   const validateForm = () => {
     const errors = {};
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    const mobileRegex = /^[6-9]\d{9}$/;
+    //const mobileRegex = /^[6-9]\d{9}$/;
 
     if (!signupData.first_name.trim())
       errors.first_name = 'First Name is required';
 
-    if (!signupData.mobile.trim())
-      errors.mobile = 'Mobile Number is required';
-    else if (!mobileRegex.test(signupData.mobile.trim()))
-      errors.mobile = 'Enter a valid 10-digit mobile number';
+    // if (!signupData.mobile.trim())
+    //   errors.mobile = 'Mobile Number is required';
+    // else if (!mobileRegex.test(signupData.mobile.trim()))
+    //   errors.mobile = 'Enter a valid 10-digit mobile number';
 
     if (!signupData.email.trim())
       errors.email = 'Email is required';
@@ -177,7 +177,7 @@ const SignUpScreen = ({ navigation }) => {
         {/* MOBILE NUMBER */}
         <Text style={styles.label}>Mobile No.</Text>
         <TextInput
-          placeholder="+91- XXXXX XXXXX"
+          placeholder="+65- 8888 7777"
           placeholderTextColor="#777"
           style={styles.input}
           keyboardType="number-pad"

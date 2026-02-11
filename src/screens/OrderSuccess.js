@@ -41,7 +41,7 @@ const OrderSuccess = () => {
             onPress={() => navigation.navigate('Orders')}
             activeOpacity={0.7}
           >
-            <Text style={styles.buttonText}>View Orders</Text>
+            <Text style={styles.buttonText}>Make Payment</Text>
           </TouchableOpacity>
           <TouchableOpacity
             style={[styles.button, styles.homeButton]}
@@ -112,7 +112,7 @@ const styles = StyleSheet.create({
   },
   buttonText: {
     color: '#ffffff',
-    fontSize: 16,
+    fontSize: 22,
     fontWeight: '600',
     fontFamily: 'System',
   },
